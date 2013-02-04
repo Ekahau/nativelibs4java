@@ -479,7 +479,7 @@ public class Platform {
                     path = root + "armeabi/"; // Android SDK + NDK-style .so embedding = lib/armeabi/libTest.so
                 } 
                 else if (isLinux())
-                    path = root + (isArm() ? "linux_arm32_arm/" : is64Bits() ? "linux_x64/" : "linux_x86/");
+                    path = root + (isArm() ? getARMLinuxLibDir() : is64Bits() ? "linux_x64/" : "linux_x86/");
                 else if (isSolaris()) {
                     if (isSparc()) {	
                         path = root + (is64Bits() ? "sunos_sparc64/" : "sunos_sparc/");
@@ -675,4 +675,35 @@ public class Platform {
 	static native int sizeOf_long();
 	
 	static native int getMaxDirectMappingArgCount();
+	
+	private static final boolean contains(String data, String[] search) {
+		if (null != data && null != search) {
+			for (int i = 0; i < search.length; i++) {
+				if (data.indexOf(search[i]) >= 0) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * ARM processors have two incompatible ABIs - one for use with the floating
+	 * point unit (HardFP - armhf), the other without (SoftFP - armel). This
+	 * generates the correct search path depending on the ABI in use by the JVM.
+	 * Unfortunately, there isn't currently a standard property that describes
+	 * the abi, so we have to "guess".
+	 * 
+	 * @return the library directory
+	 */
+	private static final String getARMLinuxLibDir() {
+		final String[] gnueabihf = new String[] { "gnueabihf", "armhf" };
+
+		final boolean isHF = (
+				contains(System.getProperty("sun.boot.library.path"), gnueabihf) ||
+						contains(System.getProperty("java.library.path"), gnueabihf) ||
+				contains(System.getProperty("java.home"), gnueabihf));
+
+		return "linux_arm32_arm" + (isHF ? "hf" : "el") + "/";
+	}
 }
