@@ -1,6 +1,9 @@
 package org.bridj;
 
 import org.bridj.util.ProcessUtils;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.regex.Pattern;
@@ -686,24 +689,109 @@ public class Platform {
 		}
 		return false;
 	}
+    
+    /*
+     * [From https://github.com/Pi4J/pi4j/blob/develop/pi4j-core/src/main/java/com/pi4j/system/SystemInfo.java]
+     * <p>
+     * this method will to obtain the version info string from the 'bash' program
+     * (this method is used to help determine the HARD-FLOAT / SOFT-FLOAT ABI of the system)
+     */
+    private static String getBashVersionInfo() {
+        String versionInfo = "";
+        try {
+            
+            String cmd = "bash --version";
+            Process p = Runtime.getRuntime().exec(cmd); 
+            p.waitFor(); 
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream())); 
+            String line = reader.readLine();
+            if(p.exitValue() == 0) {
+                while(line != null) {
+                    if(!line.isEmpty()) { 
+                        versionInfo = line; // return only first output line of version info
+                        break;
+                    }
+                    line = reader.readLine();
+                }
+            }
+        }
+        catch (IOException ioe) { ioe.printStackTrace(); }
+        catch (InterruptedException ie) { ie.printStackTrace(); }
+        return versionInfo;
+    }
 
+    /*
+     * [From https://github.com/Pi4J/pi4j/blob/develop/pi4j-core/src/main/java/com/pi4j/system/SystemInfo.java]
+     * <p>
+     * this method will determine if a specified tag exists from the elf info in the '/proc/self/exe' program
+     * (this method is used to help determine the HARD-FLOAT / SOFT-FLOAT ABI of the system)
+     */    
+    private static boolean hasReadElfTag(String tag) {
+        String tagValue = getReadElfTag(tag);
+        if(tagValue != null && !tagValue.isEmpty())
+            return true;
+        return false;
+    }
+    
+    /*
+     * [From https://github.com/Pi4J/pi4j/blob/develop/pi4j-core/src/main/java/com/pi4j/system/SystemInfo.java]
+     * <p>
+     * this method will obtain a specified tag value from the elf info in the '/proc/self/exe' program
+     * (this method is used to help determine the HARD-FLOAT / SOFT-FLOAT ABI of the system)
+     */    
+    private static String getReadElfTag(String tag) {
+        String tagValue = null;
+        try {
+            String cmd = "/usr/bin/readelf -A /proc/self/exe";
+            Process p = Runtime.getRuntime().exec(cmd); 
+            p.waitFor();
+            if(p.exitValue() == 0) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream())); 
+                String line = reader.readLine();
+                while(line != null) {
+                    line = line.trim();
+                    if (line.startsWith(tag) && line.contains(":")) {
+                        String lineParts[] = line.split(":", 2);
+                        if(lineParts.length > 1)
+                            tagValue = lineParts[1].trim();
+                        break;
+                    }
+                    line = reader.readLine();
+                }
+            }
+        }
+        catch (IOException ioe) { ioe.printStackTrace(); }
+        catch (InterruptedException ie) { ie.printStackTrace(); }
+        return tagValue;
+    }
+	
 	/**
 	 * ARM processors have two incompatible ABIs - one for use with the floating
 	 * point unit (HardFP - armhf), the other without (SoftFP - armel). This
 	 * generates the correct search path depending on the ABI in use by the JVM.
 	 * Unfortunately, there isn't currently a standard property that describes
 	 * the abi, so we have to "guess".
+	 * <p>
+	 * The implementation is derived from code in the PI4J project:
+	 * https://github.com/Pi4J/pi4j/blob/develop/pi4j-core/src/main/java/com/pi4j/system/SystemInfo.java 
 	 * 
 	 * @return the library directory
 	 */
 	private static final String getARMLinuxLibDir() {
-		final String[] gnueabihf = new String[] { "gnueabihf", "armhf" };
 
-		final boolean isHF = (
-				contains(System.getProperty("sun.boot.library.path"), gnueabihf) ||
-						contains(System.getProperty("java.library.path"), gnueabihf) ||
-				contains(System.getProperty("java.home"), gnueabihf));
-
+		final boolean isHF = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            private final String[] gnueabihf = new String[] { "gnueabihf", "armhf" };
+            public Boolean run() {                    
+                if ( contains(System.getProperty("sun.boot.library.path"), gnueabihf) ||
+                     contains(System.getProperty("java.library.path"), gnueabihf) ||
+                     contains(System.getProperty("java.home"), gnueabihf) || 
+                     getBashVersionInfo().contains("gnueabihf") ||
+                     hasReadElfTag("Tag_ABI_HardFP_use")) {
+                        return true; //
+                }
+                return false;
+            } } );
+		
 		return "linux_arm32_arm" + (isHF ? "hf" : "el") + "/";
 	}
 }
