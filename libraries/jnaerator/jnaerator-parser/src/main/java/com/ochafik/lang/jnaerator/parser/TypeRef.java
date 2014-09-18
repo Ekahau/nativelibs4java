@@ -18,6 +18,7 @@
 */
 package com.ochafik.lang.jnaerator.parser;
 
+import static com.ochafik.lang.jnaerator.parser.Element.changeValue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -29,26 +30,6 @@ import com.ochafik.lang.jnaerator.parser.ModifierKind;
 
 public abstract class TypeRef extends ModifiableElement implements Declarator.MutableByDeclarator {
 	
-    protected Identifier resolvedJavaIdentifier;
-
-    public void setResolvedJavaIdentifier(Identifier resolvedJavaIdentifier) {
-        this.resolvedJavaIdentifier = changeValue(this, this.resolvedJavaIdentifier, resolvedJavaIdentifier);
-    }
-
-    public Identifier getResolvedJavaIdentifier() {
-        return resolvedJavaIdentifier;
-    }
-    
-	@Override
-	public boolean replaceChild(Element child, Element by) {
-		if (getResolvedJavaIdentifier() == child) {
-            setResolvedJavaIdentifier((Identifier)by);
-            return true;
-        }
-			
-		return super.replaceChild(child, by);
-	}
-    
 	protected boolean markedAsResolved;
 	public TypeRef setMarkedAsResolved(boolean markedAsResolved) {
 		this.markedAsResolved = markedAsResolved;
@@ -67,6 +48,7 @@ public abstract class TypeRef extends ModifiableElement implements Declarator.Mu
 	}
 	public static abstract class TaggedTypeRef extends TypeRef {
 		Identifier tag, originalTag;
+        Identifier parentNamespace;
 		public Identifier getTag() {
 			return tag;
 		}
@@ -90,8 +72,20 @@ public abstract class TypeRef extends ModifiableElement implements Declarator.Mu
 				setOriginalTag((Identifier)by);
 				return true;
 			}
+            if (child == getParentNamespace()) {
+                setParentNamespace((Identifier) by);
+                return true;
+            }
 			return super.replaceChild(child, by);
 		}
+        
+        public void setParentNamespace(Identifier parentNamespace) {
+            this.parentNamespace = changeValue(this, this.parentNamespace, parentNamespace);
+        }
+
+        public Identifier getParentNamespace() {
+            return parentNamespace;
+        }
 		public void setOriginalTag(Identifier originalTag) {
 			this.originalTag = changeValue(this, this.originalTag, originalTag);
 		}

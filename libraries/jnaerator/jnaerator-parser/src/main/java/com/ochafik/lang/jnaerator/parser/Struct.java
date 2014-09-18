@@ -86,7 +86,7 @@ public class Struct extends TypeRef.TaggedTypeRef implements DeclarationsHolder 
 		if (super.replaceChild(child, by))
 			return true;
 		
-		if (replaceChild(protocols, SimpleTypeRef.class, this, child, by))
+        if (replaceChild(protocols, SimpleTypeRef.class, this, child, by))
 			return true;
 
 		if (replaceChild(parents, SimpleTypeRef.class, this, child, by))
@@ -168,6 +168,7 @@ public class Struct extends TypeRef.TaggedTypeRef implements DeclarationsHolder 
 	public Type getType() {
 		return type;
 	}
+    
 	public List<Declaration> getDeclarations() {
 		return unmodifiableList(declarations);
 	}
@@ -204,4 +205,9 @@ public class Struct extends TypeRef.TaggedTypeRef implements DeclarationsHolder 
 	public void setParents(SimpleTypeRef... ns) {
 		setParents(Arrays.asList(ns));
 	}
+
+    @Override
+    public DeclarationsHolder resolveHolder() {
+        return this;
+    }
 }

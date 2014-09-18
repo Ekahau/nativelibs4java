@@ -1,13 +1,45 @@
+/*
+ * BridJ - Dynamic and blazing-fast native interop for Java.
+ * http://bridj.googlecode.com/
+ *
+ * Copyright (c) 2010-2013, Olivier Chafik (http://ochafik.com/)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Olivier Chafik nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY OLIVIER CHAFIK AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.bridj;
 
 import com.sun.jna.Memory;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Arrays;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 import org.bridj.ann.Field;
+import org.bridj.ann.Alignment;
 import org.bridj.ann.Library;
 import org.bridj.ann.Array;
 import org.bridj.ann.Ptr;
@@ -317,6 +349,16 @@ public class StructTest {
             io.setDoubleField(this, 1, b);
             return this;
         }
+        
+        @Field(2)
+        @Alignment(32)
+		public int c() {
+			return io.getIntField(this, 2);
+        }
+        public MyStruct c(int c) {
+            io.setIntField(this, 2, c);
+            return this;
+        }
 	}
 
     public static class TestStruct extends MyStruct {
@@ -324,14 +366,14 @@ public class StructTest {
         public TestStruct() { super(); }
 
         @Array(10)
-        @Field(2)
+        @Field(3)
 		public Pointer<Integer> values() {
-			return io.getPointerField(this, 2);
+			return io.getPointerField(this, 3);
         }
 
-        @Field(3)
+        @Field(4)
         public MyStruct sub() {
-			return io.getNativeObjectField(this, 3);
+			return io.getNativeObjectField(this, 4);
         }
     }
 
@@ -344,12 +386,16 @@ public class StructTest {
         
         @Field(1)
 		public double b;
+        
+        @Field(2)
+        @Alignment(32)
+		public int c;
 
         @Array(10)
-        @Field(2)
+        @Field(3)
 		public Pointer<Integer> values;
 
-        @Field(3)
+        @Field(4)
         public MyStruct sub;
 	}
 	
@@ -362,14 +408,14 @@ public class StructTest {
 		s.a(10);
 		s.b(20);
 		
-		TestStructWithFields fs = new TestStructWithFields(pointerTo(s));
+		TestStructWithFields fs = new TestStructWithFields(getPointer(s));
 
         assertEquals(s.a(), 10); // no modification of original struct
 		assertEquals(s.b(), 20, 0);
 		assertEquals(s.a(), fs.a); // read fields upon creation
 		assertEquals(s.b(), fs.b, 0);
 
-		assertEquals(pointerTo(s.sub()), pointerTo(fs.sub));
+		assertEquals(getPointer(s.sub()), getPointer(fs.sub));
 
         assertEquals(s.values(), fs.values);
 
@@ -391,11 +437,16 @@ public class StructTest {
 		long len = sizeOf(MyStruct.class);
 		int a = 10;
 		double b = 12.0;
-		pointerTo(x).clearBytesAtOffset(0, len, (byte)0xff);
+		int c = -3;
+		getPointer(x).clearBytesAtOffset(0, len, (byte)0xff);
 		for (MyStruct s : new MyStruct[] { x, y })
-			s.a(a).b(b);
+			s.a(a).b(b).c(c);
 		
-		assertFalse(pointerTo(x).compareBytes(pointerTo(y), len) == 0);
+        assertEquals(32, StructObject.offsetOfField(x, "c"));
+//		System.out.println(StructIO.getInstance(MyStruct.class).desc.describe());
+//		SolidRanges sr = x.io.desc.getSolidRanges();
+		assertFalse(getPointer(x).compareBytes(getPointer(y), len) == 0);
+        //assertArrayEquals(new long[] { 0, 16}, sr.offsets);
 		assertEquals(x, y);
 		assertFalse(x.equals(z));
 	}
@@ -409,6 +460,11 @@ public class StructTest {
 		}
 		public int a;
 		public double b;
+		
+		@Override
+		protected List<String> getFieldOrder() {
+			return Arrays.asList("a", "b");
+		}
 	}
     public static class MyNIOStruct {
         final ByteBuffer p;
@@ -438,9 +494,9 @@ public class StructTest {
         private static final long aOffset, bOffset;
         static {
             StructIO io = StructIO.getInstance(MyOptimalStruct.class, MyOptimalStruct.class);
-            io.build();
-            aOffset = io.fields[0].byteOffset;
-            bOffset = io.fields[1].byteOffset;
+            io.desc.build();
+            aOffset = io.desc.fields[0].byteOffset;
+            bOffset = io.desc.fields[1].byteOffset;
         }
 		public MyOptimalStruct(ByteBuffer p) {//com.sun.jna.Pointer p) {
             this.pointer = p;
@@ -574,7 +630,7 @@ public class StructTest {
         ThisStruct s = new ThisStruct();
         assertEquals(2 * 4, BridJ.sizeOf(ThisStruct.class));
         SubStruct sub = s.sub();
-        assertEquals("Invalid sub-struct !", pointerTo(s).offset(4), pointerTo(sub));
+        assertEquals("Invalid sub-struct !", getPointer(s).offset(4), getPointer(sub));
         
     }
     
@@ -598,7 +654,7 @@ public class StructTest {
         ThisStructFields s = new ThisStructFields();
         s.a = 10;
         BridJ.writeToNative(s);
-        s = pointerTo(s).get();
+        s = getPointer(s).get();
         int a = s.a;
         assertEquals(10, a);
     }
@@ -607,11 +663,11 @@ public class StructTest {
         ThisStructFields s = new ThisStructFields();
         assertEquals(2 * 4, BridJ.sizeOf(ThisStructFields.class));
         SubStructFields sub = s.sub;
-        assertEquals("Invalid sub-struct !", pointerTo(s).offset(4), pointerTo(sub));
+        assertEquals("Invalid sub-struct !", getPointer(s).offset(4), getPointer(sub));
         sub.a = 100;
         BridJ.writeToNative(s);
         
-        s = pointerTo(s).get();
+        s = getPointer(s).get();
         assertEquals(100, s.sub.a);
     }
     
@@ -627,7 +683,7 @@ public class StructTest {
         StructWithArrays s = new StructWithArrays();
         Pointer<Integer> pInts = s.ints();
         assertEquals("Invalid array field pointer type", Integer.class, pInts.getTargetType());
-        assertEquals("Invalid sub array", pointerTo(s).getPeer(), pInts.getPeer());
+        assertEquals("Invalid sub array", getPointer(s).getPeer(), pInts.getPeer());
     }
     
     public static class CLongSize extends StructObject {
@@ -665,7 +721,7 @@ public class StructTest {
     	assertEquals(2 * Pointer.SIZE, s);
     	//System.out.println("sizeof = " + s);
     	NoLoop l = new NoLoop();
-    	Pointer<NoLoop> p = pointerTo(l);
+    	Pointer<NoLoop> p = getPointer(l);
     	//System.out.println("NoLoop = " + p);
     	//System.out.println("valid bytes = " + p.getValidBytes() + ", sizeof = " + s);
     	l = p.get();
@@ -713,10 +769,10 @@ public class StructTest {
 		public byte b;
 	}
 
-	public static class TinyStructCustomizer extends StructIO.DefaultCustomizer {
+	public static class TinyStructCustomizer extends StructCustomizer {
 		@Override
-		public void beforeLayout(StructIO io, List<StructIO.AggregatedFieldDesc> aggregatedFields) {
-			for (StructIO.AggregatedFieldDesc field : aggregatedFields) {
+		public void beforeLayout(StructDescription desc, List<StructFieldDescription> aggregatedFields) {
+			for (StructFieldDescription field : aggregatedFields) {
 				field.byteLength = 1;
 				field.alignment = 1;
 			}
@@ -729,7 +785,7 @@ public class StructTest {
     		s.a = 10;
     		s.b = -20;
     		BridJ.writeToNative(s);
-    		TinyStruct t = pointerTo(s).as(TinyStruct.class).get();
+    		TinyStruct t = getPointer(s).as(TinyStruct.class).get();
     		assertEquals(s.a, t.a);
     		assertEquals(s.b, t.b);
     }
@@ -748,7 +804,7 @@ public class StructTest {
     @Test
     public void testTimeval() {
     		TimeT.timeval tv = new TimeT.timeval();
-    		Pointer<TimeT.timeval> ptv = pointerTo(tv);
+    		Pointer<TimeT.timeval> ptv = getPointer(tv);
     		tv = ptv.get();
     }
     	
@@ -832,7 +888,7 @@ public class StructTest {
     
     @Test
     public void testEnumsFieldRegression() {
-        Pointer<cec_device_type_list> pDeviceTypeList = Pointer.pointerTo(new cec_device_type_list());
+        Pointer<cec_device_type_list> pDeviceTypeList = Pointer.getPointer(new cec_device_type_list());
         cec_device_type_list deviceTypeList = pDeviceTypeList.get();
         Pointer<IntValuedEnum<cec_device_type>> pDeviceTypes = deviceTypeList.types();
     }

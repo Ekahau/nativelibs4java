@@ -77,7 +77,8 @@ public abstract class Expression extends Element {
 		}
 		@Override
 		public boolean replaceChild(Element child, Element by) {
-			return replaceChild(getExpressions(), Expression.class, this, child, by);
+            return replaceChild(getExpressions(), Expression.class, this, child, by) ||
+                super.replaceChild(child, by);
 		}
 	}
 	public static class OpaqueExpression extends Expression {
@@ -108,12 +109,6 @@ public abstract class Expression extends Element {
 		public Element getPreviousChild(Element child) {
 			return null;
 		}
-
-		@Override
-		public boolean replaceChild(Element child, Element by) {
-			return false;
-		}
-
 	}
 	boolean parenthesis;
 	public Expression setParenthesis(boolean parenthesis) {
@@ -187,7 +182,7 @@ public abstract class Expression extends Element {
 				setType((TypeRef) by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 	}
 
@@ -206,11 +201,6 @@ public abstract class Expression extends Element {
 		@Override
 		public Element getPreviousChild(Element child) {
 			return null;
-		}
-
-		@Override
-		public boolean replaceChild(Element child, Element by) {
-			return false;
 		}
 	}
 	
@@ -258,7 +248,7 @@ public abstract class Expression extends Element {
 				setTarget((Expression)by);
 			if (child == getName())
 				setName((Identifier)by);
-			return false;
+			return super.replaceChild(child, by);
 		}
 		
 		
@@ -345,7 +335,8 @@ public abstract class Expression extends Element {
 			}
             return 
                 replaceChild(initialValues, Expression.class, this, child, by) ||
-                replaceChild(dimensions, Expression.class, this, child, by);
+                replaceChild(dimensions, Expression.class, this, child, by) ||
+                super.replaceChild(child, by);
 		}
 
 	}
@@ -402,7 +393,7 @@ public abstract class Expression extends Element {
 				setConstruction((FunctionCall) by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 	}
 	public static class FunctionCall extends MemberRef {
@@ -567,7 +558,7 @@ public abstract class Expression extends Element {
 				setIndex((Expression)by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 	}
 	
@@ -611,7 +602,7 @@ public abstract class Expression extends Element {
 				setName((Identifier) by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 	}
 
@@ -759,15 +750,16 @@ public abstract class Expression extends Element {
 		public Element getPreviousChild(Element child) {
 			return null;
 		}
-
-		@Override
-		public boolean replaceChild(Element child, Element by) {
-			return false;
-		}
 	}
 	public static class ConditionalExpression extends Expression {
 		Expression test, thenValue, elseValue;
 
+                public ConditionalExpression() {}
+                public ConditionalExpression(Expression test, Expression thenValue, Expression elseValue) {
+                    setTest(test);
+                    setThenValue(thenValue);
+                    setElseValue(elseValue);
+                }
 		public Expression getTest() {
 			return test;
 		}
@@ -822,7 +814,7 @@ public abstract class Expression extends Element {
 				setElseValue((Expression)by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 		
 	}
@@ -873,7 +865,7 @@ public abstract class Expression extends Element {
 				setType((TypeRef)by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 	}
 	public static class AssignmentOp extends Expression {
@@ -941,7 +933,7 @@ public abstract class Expression extends Element {
 				setValue((Expression) by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 
 
@@ -1013,7 +1005,7 @@ public abstract class Expression extends Element {
 				setSecondOperand((Expression) by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 
 	}
@@ -1066,7 +1058,7 @@ public abstract class Expression extends Element {
 				setOperand((Expression) by);
 				return true;
 			}
-			return false;
+			return super.replaceChild(child, by);
 		}
 
 	}
@@ -1089,6 +1081,13 @@ public abstract class Expression extends Element {
 				throw new NullPointerException();
 			setType(type);
 			setIntForm(intForm);
+			setValue(value);
+            setOriginalTextualRepresentation(originalTextualRepresentation);
+            
+			checkType();
+		}
+		public Constant(Type type, Object value, String originalTextualRepresentation) {
+			setType(type);
 			setValue(value);
             setOriginalTextualRepresentation(originalTextualRepresentation);
 			
@@ -1138,13 +1137,6 @@ public abstract class Expression extends Element {
 		public static Constant newNull() {
             return new Constant(Constant.Type.Null, null, null);
         }
-		public Constant(Type type, Object value, String originalTextualRepresentation) {
-			setType(type);
-			setValue(value);
-            setOriginalTextualRepresentation(originalTextualRepresentation);
-			
-			checkType();
-		}
 		
 		public void setIntForm(IntForm intForm) {
 			this.intForm = intForm;
@@ -1213,11 +1205,6 @@ public abstract class Expression extends Element {
 		@Override
 		public Element getPreviousChild(Element child) {
 			return null;
-		}
-
-		@Override
-		public boolean replaceChild(Element child, Element by) {
-			return false;
 		}
 
 		public Integer asInteger() {
@@ -1317,7 +1304,7 @@ public abstract class Expression extends Element {
 						if (Character.isDigit(c)) {
 							int start = i - 1;
 							int end = i;
-							while (Character.isDigit(string.charAt(end))) {
+							while (end < len && Character.isDigit(string.charAt(end))) {
 								end++;
 							}
 							b.append((char)Integer.parseInt(string.substring(start, end), 8));
@@ -1347,25 +1334,29 @@ public abstract class Expression extends Element {
 			else
 				return new Constant(Type.Long, IntForm.String, result, orig);
 		}
-		
-		public static Constant parseString(final String orig) {
+    
+    public static Constant parseString(final String orig) {
             String string = orig;
-			int len = string.length();
-			if (len < 2 || string.charAt(0) != '"' || string.charAt(len - 1) != '"')
-				throw new IllegalArgumentException("Expecting string, got " + string);
+      int len = string.length();
+      if (len < 2 || string.charAt(0) != '"' || string.charAt(len - 1) != '"')
+        throw new IllegalArgumentException("Expecting string, got " + string);
 
-			string = string.substring(1, len - 1);
-			return new Constant(Type.String, parseNakedString(string), orig);
-		}
+      string = string.substring(1, len - 1);
+      return new Constant(Type.String, parseNakedString(string), orig);
+    }
+    
+    public static Constant string(final String s) {
+      return new Constant(Type.String, s, s);
+    }
 
 		public static Constant parseDecimal(String string) {
-			return parseDecimal(string, 10, IntForm.Decimal, false);
+			return parseInteger(string, 10, IntForm.Decimal, false);
 		}
 		
-        public static Constant parseDecimal(final String string, int radix, IntForm form, boolean negate) {
-            return parseDecimal(string, radix, form, negate, string);
+        public static Constant parseInteger(final String string, int radix, IntForm form, boolean negate) {
+            return parseInteger(string, radix, form, negate, string);
         }
-		public static Constant parseDecimal(String string, int radix, IntForm form, boolean negate, final String orig) {
+		public static Constant parseInteger(String string, int radix, IntForm form, boolean negate, final String orig) {
             string = string.trim().toLowerCase();
 			if (string.startsWith("+"))
                 string = string.substring(1);
@@ -1408,7 +1399,7 @@ public abstract class Expression extends Element {
                         value = (boolean)(longValue != 0);
                         break;
                     case Byte:
-                        if (longValue > Byte.MAX_VALUE) {
+                        if (longValue > Byte.MAX_VALUE || longValue < 2 * Byte.MIN_VALUE) {
                             tpe = Type.Short;
                             value = (short)(negate ? -longValue : longValue);
                         } else {
@@ -1421,7 +1412,7 @@ public abstract class Expression extends Element {
                         value = (char)(longValue & 0xffff);
                         break;
                     case Short:
-                        if (longValue > 2 * Short.MAX_VALUE) {
+                        if (longValue > 2 * Short.MAX_VALUE || longValue < 2 * Short.MIN_VALUE) {
                             tpe = Type.Int;
                             value = (int)(negate ? -longValue : longValue);
                         } else {
@@ -1430,11 +1421,11 @@ public abstract class Expression extends Element {
                         }
                         break;
                     case Int:
-                        if (longValue > 2L * Integer.MAX_VALUE) {
+                        if (longValue > 2L * Integer.MAX_VALUE || longValue < 2L * Integer.MIN_VALUE) {
                             tpe = Type.Long;
                             value = negate ? -longValue : longValue;
                         } else {
-                            if (longValue > Integer.MAX_VALUE)
+                            if (longValue > Integer.MAX_VALUE || longValue < Integer.MIN_VALUE)
                                 tpe = Type.UInt;
                             int v = (int)(longValue & 0xffffffff);
                             value = negate ? -v : v;
@@ -1459,7 +1450,7 @@ public abstract class Expression extends Element {
                     // TODO: handle UShort, UByte
                 }
             }
-			return new Constant(tpe, value, orig);
+			return new Constant(tpe, form, value, orig);
 		}
 
 		public static Constant parseHex(final String orig, boolean negate) {
@@ -1469,7 +1460,7 @@ public abstract class Expression extends Element {
 				throw new IllegalArgumentException("Expected hex literal, got " + string);
 			
 			try {
-				return parseDecimal(string.substring(2), 16, IntForm.Hex, negate, orig);
+				return parseInteger(string.substring(2), 16, IntForm.Hex, negate, orig);
 			} catch (NumberFormatException ex) {
 				throw new NumberFormatException("Parsing hex : \"" + string +"\"");
 			}
@@ -1480,7 +1471,7 @@ public abstract class Expression extends Element {
 			if (!string.startsWith("0"))
 				throw new IllegalArgumentException("Expected octal literal, got " + string);
 			
-			return parseDecimal(string.substring(1), 8, IntForm.Octal, negate);
+			return parseInteger(string.substring(1), 8, IntForm.Octal, negate);
 		}
 
 		public static Constant parseFloat(final String orig) {
@@ -1503,10 +1494,17 @@ public abstract class Expression extends Element {
             if (s == null)
                 return null;
             
-            String low = s.toLowerCase();
-            for (String end : trailingTypeInfos) {
-                if (low.endsWith(end))
-                    return s.substring(0, s.length() - end.length());
+            while (s.length() > 0) {
+                switch (Character.toLowerCase(s.charAt(s.length() - 1))) {
+                case 'u':
+                case 'l':
+                case 'i':
+                case 's':
+                    s = s.substring(0, s.length() - 1);
+                    break;
+                default:
+                    return s;
+                }
             }
             return s;
         }
@@ -1522,7 +1520,15 @@ public abstract class Expression extends Element {
                     txt = trimTrailingTypeInfo(txt);
                     break;
                 case UInt:
+                    if (intForm != IntForm.Hex && (getValue() instanceof Long) && ((Long)getValue()) > Integer.MAX_VALUE) {
+                        txt = null;
+                        break;
+                    }
                 case ULong:
+                    if (intForm == IntForm.Hex) {
+                        txt = trimTrailingTypeInfo(txt);
+                        break;
+                    }
                 case IntegerString:
                     txt = null;
                     break;
@@ -1537,8 +1543,6 @@ public abstract class Expression extends Element {
 				type = Type.Long;
 				break;
 			case UInt:
-                if ((getValue() instanceof Long) && ((Long)getValue()) > Integer.MAX_VALUE)
-                    txt = null;
             case IntegerString:
 			    type = Type.Int;
 				break;

@@ -1,3 +1,34 @@
+/*
+ * BridJ - Dynamic and blazing-fast native interop for Java.
+ * http://bridj.googlecode.com/
+ *
+ * Copyright (c) 2010-2013, Olivier Chafik (http://ochafik.com/)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Olivier Chafik nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY OLIVIER CHAFIK AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+#define _GNU_SOURCE
 #include "org_bridj_JNI.h"
 #include "JNI.h"
 
@@ -35,7 +66,7 @@ jmethodID gCreatePeerMethod = NULL;
 jmethodID gGetValuedEnumValueMethod = NULL;
 jmethodID gGetJavaObjectFromNativePeerMethod = NULL;
 //jmethodID gNewFlagSetMethod = NULL;
-jmethodID gThrowNewLastErrorMethod = NULL;
+jmethodID gSetLastErrorMethod = NULL;
 jmethodID gGetCallIOsMethod = NULL;
 jmethodID gGetCallIOStructMethod = NULL;
 jmethodID gCallIOGetPeerMethod = NULL;
@@ -60,7 +91,8 @@ jfieldID 	gFieldId_startsWithThis 	     = NULL;
 jfieldID 	gFieldId_isCPlusPlus 	     = NULL;
 jfieldID 	gFieldId_isStatic    	     = NULL;
 jfieldID 	gFieldId_bNeedsThisPointer 	 = NULL;
-jfieldID 	gFieldId_bThrowLastError 	 = NULL;
+jfieldID 	gFieldId_throwsLastError 	 = NULL;
+jfieldID 	gFieldId_setsLastError 	 = NULL;
 jfieldID 	gFieldId_dcCallingConvention = NULL;
 jfieldID 	gFieldId_symbolName			 = NULL;
 jfieldID 	gFieldId_nativeClass			 = NULL;
@@ -195,7 +227,7 @@ void initMethods(JNIEnv* env) {
 		gAddressMethod = (*env)->GetStaticMethodID(env, gPointerClass, "getAddress", "(Lorg/bridj/NativeObject;" CLASS_SIG ")J");
 		gGetPeerMethod = (*env)->GetMethodID(env, gPointerClass, "getPeer", "()J");
 		gCreatePeerMethod = (*env)->GetStaticMethodID(env, gPointerClass, "pointerToAddress", "(JLjava/lang/Class;)" POINTER_SIG);
-		gThrowNewLastErrorMethod = (*env)->GetStaticMethodID(env, gLastErrorClass, "throwNewInstance", "(I" STRING_SIG ")V");
+		gSetLastErrorMethod = (*env)->GetStaticMethodID(env, gLastErrorClass, "setLastError", "(II)Lorg/bridj/LastError;");
 		gGetCallIOsMethod = (*env)->GetMethodID(env, gMethodCallInfoClass, "getCallIOs", "()[Lorg/bridj/CallIO;");
 		gNewCallIOInstance = (*env)->GetMethodID(env, gCallIOClass, "newInstance", "(J)" OBJECT_SIG);
 		gGetCallIOStructMethod = (*env)->GetMethodID(env, gCallIOClass, "getDCStruct", "()J");
@@ -239,7 +271,7 @@ void initMethods(JNIEnv* env) {
 		GETFIELD_ID(isStatic		 		,	"isStatic"			,	"Z"								);
 		GETFIELD_ID(startsWithThis		,	"startsWithThis"		,	"Z"								);
 		GETFIELD_ID(bNeedsThisPointer	,	"bNeedsThisPointer"		,	"Z"							);
-		GETFIELD_ID(bThrowLastError	,	"bThrowLastError"		,	"Z"								);
+		GETFIELD_ID(throwsLastError	,	"throwsLastError"		,	"Z"								);
 		GETFIELD_ID(dcCallingConvention,	"dcCallingConvention"	,	"I"								);
 		
 		gLog = (*env)->GetStaticBooleanField(env, gBridJClass, gLogCallsField);
@@ -251,7 +283,7 @@ void initMethods(JNIEnv* env) {
 
 jlong getFlagValue(JNIEnv *env, jobject valuedEnum)
 {
-	initMethods(env);
+	// initMethods(env);
 	return valuedEnum ? (*env)->CallLongMethod(env, valuedEnum, gGetValuedEnumValueMethod) : 0;	
 }
 
@@ -284,7 +316,7 @@ jobject createPointerFromIO(JNIEnv *env, void* ptr, jobject callIO) {
 	jlong addr;
 	if (!callIO)
 		return NULL;
-	initMethods(env);
+	// initMethods(env);
 	addr = PTR_TO_JLONG(ptr);
 	instance = (*env)->CallObjectMethod(env, callIO, gNewCallIOInstance, addr);
 	return instance;
@@ -299,18 +331,18 @@ DCstruct* getNativeObjectPointerWithIO(JNIEnv *env, jobject instance, jobject ca
 }
 
 void* getPointerPeer(JNIEnv *env, jobject pointer) {
-	initMethods(env);
+	// initMethods(env);
 	return pointer ? JLONG_TO_PTR((*env)->CallLongMethod(env, pointer, gGetPeerMethod)) : NULL;
 }
 
 void* getNativeObjectPointer(JNIEnv *env, jobject instance, jclass targetClass) {
-	initMethods(env);
+	// initMethods(env);
 	return JLONG_TO_PTR((*env)->CallStaticLongMethod(env, gPointerClass, gAddressMethod, instance, targetClass));
 }
 
 
 jobject getJavaObjectForNativePointer(JNIEnv *env, void* nativeObject) {
-	initMethods(env);
+	// initMethods(env);
 	return (*env)->CallStaticObjectMethod(env, gBridJClass, gGetJavaObjectFromNativePeerMethod, PTR_TO_JLONG(nativeObject));
 }
 
@@ -338,7 +370,7 @@ jobject JNICALL Java_org_bridj_JNI_refToObject(JNIEnv *env, jclass clazz, jlong 
 }
 
 void logCall(JNIEnv *env, jobject method) {
-	initMethods(env);
+	// initMethods(env);
 	(*env)->CallStaticObjectMethod(env, gBridJClass, gLogCallMethod, method);
 }
 
@@ -491,9 +523,11 @@ jarray JNICALL Java_org_bridj_JNI_getLibrarySymbols(JNIEnv *env, jclass clazz, j
 	ret = (*env)->NewObjectArray(env, count, stringClass, 0);
     for (i = 0; i < count; i++) {
 		const char* name = dlSymsName(pSyms, i);
-		if (!name)
-			continue;
-		(*env)->SetObjectArrayElement(env, ret, i, (*env)->NewStringUTF(env, name));
+		if (name) {
+			jstring nameString = (*env)->NewStringUTF(env, name);
+			(*env)->SetObjectArrayElement(env, ret, i, nameString);
+			DEL_LOCAL_REF(nameString);
+		}
     }
 	//END_TRY_CALL(env);
     return ret;
@@ -650,9 +684,9 @@ void initCommonCallInfo(
 			info->fCallIOs = (jobject*)malloc((n + 1) * sizeof(jobject));
 			for (i = 0; i < n; i++) {
 				jobject obj = (*env)->GetObjectArrayElement(env, callIOs, i);
-				if (obj)
-					obj = GLOBAL_REF(obj);
-				info->fCallIOs[i] = obj;
+				jobject gobj = obj ? GLOBAL_REF(obj) : NULL;
+				info->fCallIOs[i] = gobj;
+				DEL_LOCAL_REF(obj);
 			}
 			info->fCallIOs[n] = NULL;
 		}
@@ -792,7 +826,8 @@ void freeCommon(JNIEnv* env, CommonCallbackInfo* info)
 #define GetField_isStatic()              jboolean         isStatic             = (*env)->GetBooleanField(  env, methodCallInfo, gFieldId_isStatic            )
 #define GetField_startsWithThis()        jboolean         startsWithThis       = (*env)->GetBooleanField(  env, methodCallInfo, gFieldId_startsWithThis      )
 #define GetField_bNeedsThisPointer()     jboolean         bNeedsThisPointer    = (*env)->GetBooleanField(  env, methodCallInfo, gFieldId_bNeedsThisPointer   )
-#define GetField_bThrowLastError()       jboolean         bThrowLastError      = (*env)->GetBooleanField(  env, methodCallInfo, gFieldId_bThrowLastError   )
+#define GetField_throwsLastError()       jboolean         throwsLastError      = (*env)->GetBooleanField(  env, methodCallInfo, gFieldId_throwsLastError   )
+#define GetField_setsLastError()       jboolean           setsLastError      = (*env)->GetBooleanField(  env, methodCallInfo, gFieldId_setsLastError   )
 #define GetField_declaringClass()        jstring          declaringClass       = (jclass)(*env)->GetObjectField(env, methodCallInfo, gFieldId_declaringClass )
 #define GetField_nParams()               jsize            nParams              = (*env)->GetArrayLength(   env, paramsValueTypes                             )
 #define GetField_callIOs()               jobjectArray     callIOs              = (*env)->CallObjectMethod( env, methodCallInfo, gGetCallIOsMethod            )
@@ -801,13 +836,14 @@ void freeCommon(JNIEnv* env, CommonCallbackInfo* info)
 #define BEGIN_INFOS_LOOP(type)                                                                                           \
 	jsize i, n = (*env)->GetArrayLength(env, methodCallInfos);															 \
 	NEW_STRUCTS(n, type, infos);																						 \
-	initMethods(env);                                                                                        	 		 \
 	for (i = 0; i < n; i++)                                                                                          	 \
 	{                  																								 	 \
 		type* info = &infos[i];																						 	 \
 		jobject methodCallInfo = (*env)->GetObjectArrayElement(env, methodCallInfos, i);
 		
-#define END_INFOS_LOOP() }
+#define END_INFOS_LOOP() \
+        DEL_LOCAL_REF(methodCallInfo); \
+    }
 
 JNIEXPORT jlong JNICALL Java_org_bridj_JNI_createCToJavaCallback(
 	JNIEnv *env, 
@@ -913,10 +949,15 @@ JNIEXPORT jlong JNICALL Java_org_bridj_JNI_bindJavaToCCallbacks(
 	GetField_declaringClass()       ;
 	GetField_nParams()              ;
 	GetField_callIOs()              ;
+  GetField_throwsLastError()        ;
+  GetField_setsLastError()        ;
 	
 	{
 		//void* callback;
 		const char* dcSig;
+		
+		info->fInfo.fThrowsLastError = throwsLastError;
+		info->fInfo.fSetsLastError = setsLastError || throwsLastError;
 		
 		// TODO DIRECT C++ virtual thunk
 		dcSig = GET_CHARS(dcSignature);
@@ -968,7 +1009,8 @@ JNIEXPORT jlong JNICALL Java_org_bridj_JNI_bindJavaMethodsToCFunctions(
 	GetField_isStatic()             ;
 	GetField_startsWithThis()       ;
 	GetField_declaringClass()       ;
-	GetField_bThrowLastError()      ;
+	GetField_throwsLastError()      ;
+  GetField_setsLastError()        ;
 	GetField_nParams()              ;
 	GetField_callIOs()              ;
 	
@@ -977,7 +1019,8 @@ JNIEXPORT jlong JNICALL Java_org_bridj_JNI_bindJavaMethodsToCFunctions(
 		if (isCPlusPlus && !isStatic && declaringClass)
 			info->fClass = GLOBAL_REF(declaringClass);
 		
-		info->fCheckLastError = bThrowLastError;
+		info->fInfo.fThrowsLastError = throwsLastError;
+		info->fInfo.fSetsLastError = setsLastError || throwsLastError;
 		
 #ifndef NO_DIRECT_CALLS
 		if (direct && !gProtected && forwardedPointer)
@@ -1123,8 +1166,7 @@ JNIEXPORT jlong JNICALL Java_org_bridj_JNI_bindJavaMethodsToVirtualMethods(
 		ds = GET_CHARS(dcSignature);
 		info->fInfo.fDCCallback = dcbNewCallback(ds, JavaToVirtualMethodCallHandler, info);
 		RELEASE_CHARS(dcSignature, ds);
-		
-		
+
 		initCommonCallInfo(&info->fInfo, env, declaringClass, methodName, javaSignature, dcCallingConvention, nParams, returnValueType, paramsValueTypes, callIOs, JNI_TRUE, method);
 	}
 	END_INFOS_LOOP()
@@ -1232,7 +1274,7 @@ jint JNICALL Java_org_bridj_JNI_memcmp(JNIEnv *env, jclass clazz, jlong ptr1, jl
 void JNICALL Java_org_bridj_JNI_memset(JNIEnv *env, jclass clazz, jlong ptr, jbyte value, jlong size)
 {
 	BEGIN_TRY_CALL(env);
-	PTR_TO_JLONG(memset(JLONG_TO_PTR(ptr), value, (size_t)size));
+	memset(JLONG_TO_PTR(ptr), value, (size_t)size);
 	END_TRY_CALL(env);
 }
 

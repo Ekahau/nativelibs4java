@@ -13,8 +13,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.*;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
 import com.nativelibs4java.opencl.library.OpenCLLibrary;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_platform_id;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_platform_id;
 import org.bridj.*;
 import org.bridj.ann.Ptr;
 
@@ -30,6 +35,7 @@ public class JavaCL {
 
 	static final boolean debug = "true".equals(System.getProperty("javacl.debug")) || "1".equals(System.getenv("JAVACL_DEBUG"));
     static final boolean verbose = debug || "true".equals(System.getProperty("javacl.verbose")) || "1".equals(System.getenv("JAVACL_VERBOSE"));
+    static final boolean logCalls = "true".equals(System.getProperty("javacl.logCalls")) || "1".equals(System.getenv("JAVACL_LOG_CALLS"));
     static final int minLogLevel = Level.WARNING.intValue();
     
     static final String JAVACL_DEBUG_COMPILER_FLAGS_PROP = "JAVACL_DEBUG_COMPILER_FLAGS";
@@ -49,13 +55,27 @@ public class JavaCL {
 		log(level, message, null);
 		return true;
 	}
+	
+	static void check(boolean test, String message, Object... formatArgs) {
+		if (!test) throw new RuntimeException(String.format(message, formatArgs));
+	}
 
 	private static int getPlatformIDs(int count, Pointer<cl_platform_id> out, Pointer<Integer> pCount) {
-		try {
-			return CL.clIcdGetPlatformIDsKHR(count, getPeer(out), getPeer(pCount));
-		} catch (Throwable th) {
-			return CL.clGetPlatformIDs(count, getPeer(out), getPeer(pCount));
-		}
+        assert (count == 0) ^ (pCount == null);  
+        assert (count == 0) == (out == null);
+        if (hasIcd == null || hasIcd.booleanValue()) {
+    		try {
+    			int ret = CL.clIcdGetPlatformIDsKHR(count, getPeer(out), getPeer(pCount));
+                if (hasIcd == null)
+                    hasIcd = true;
+                return ret;
+    		} catch (Throwable th) {
+                hasIcd = false;
+    			return CL.clGetPlatformIDs(count, getPeer(out), getPeer(pCount));
+    		}
+        } else {
+            return CL.clGetPlatformIDs(count, getPeer(out), getPeer(pCount));
+        }
 	}
 	
 	@org.bridj.ann.Library("OpenCLProbe") 
@@ -113,7 +133,8 @@ public class JavaCL {
 		}
 	}	
 
-    static final OpenCLLibrary CL;
+    static final IOpenCLLibrary CL;
+    static Boolean hasIcd;
 	static {
 		if (Platform.isLinux()) {
 			String amdAppBase = "/opt/AMDAPP/lib";
@@ -188,11 +209,23 @@ public class JavaCL {
         }
         BridJ.register(libraryClass);
         try {
-            CL = libraryClass.newInstance();
+            IOpenCLLibrary cl = libraryClass.newInstance();
+            CL = logCalls ? wrapWithLogs(cl) : cl;
         } catch (Throwable ex) {
             throw new RuntimeException("Failed to instantiate library " + libraryClass.getName() + ": " + ex, ex);
         }
 	}
+    
+    private static IOpenCLLibrary wrapWithLogs(final IOpenCLLibrary cl) {
+        return (IOpenCLLibrary) Proxy.newProxyInstance(JavaCL.class.getClassLoader(), new Class[] { IOpenCLLibrary.class }, new InvocationHandler() {
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                log(Level.INFO, method.getName() + "(" + StringUtils.implode(args, ", ") + ")");
+                Object ret = method.invoke(cl, args);
+                log(Level.INFO, "\t" + method.getName() + " -> " + ret);
+                return ret;
+            }
+        });
+    }
 	
     /**
      * List the OpenCL implementations that contain at least one GPU device.

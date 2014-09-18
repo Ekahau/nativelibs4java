@@ -1,3 +1,33 @@
+/*
+ * BridJ - Dynamic and blazing-fast native interop for Java.
+ * http://bridj.googlecode.com/
+ *
+ * Copyright (c) 2010-2013, Olivier Chafik (http://ochafik.com/)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Olivier Chafik nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY OLIVIER CHAFIK AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.bridj;
 import org.bridj.util.*;
 import java.lang.reflect.ParameterizedType;
@@ -11,6 +41,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import static org.bridj.SizeT.safeIntCast;
 
+#set ($integrals = [ "SizeT", "CLong"])
 /**
  * Pointer to a native memory location.<br>
  * Pointer is the entry point of any pointer-related operation in BridJ.
@@ -24,7 +55,7 @@ import static org.bridj.SizeT.safeIntCast;
 #foreach ($prim in $primitives)
  *		{@link Pointer#get${prim.CapName}()} / {@link Pointer#set${prim.CapName}(${prim.Name})} <br>
 #end
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
  *		{@link Pointer#get${sizePrim}()} / {@link Pointer#set${sizePrim}(long)} <br>
 #end
  *</li>
@@ -32,7 +63,7 @@ import static org.bridj.SizeT.safeIntCast;
 #foreach ($prim in $primitives)
  *		{@link Pointer#get${prim.CapName}AtIndex(long)} / {@link Pointer#set${prim.CapName}AtIndex(long, ${prim.Name})} <br>
 #end
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
  *	  {@link Pointer#get${sizePrim}AtIndex(long)} / {@link Pointer#set${sizePrim}AtIndex(long, long)} <br>
 #end
  *</li>
@@ -40,7 +71,7 @@ import static org.bridj.SizeT.safeIntCast;
 #foreach ($prim in $primitives)
  *		{@link Pointer#get${prim.CapName}AtOffset(long)} / {@link Pointer#set${prim.CapName}AtOffset(long, ${prim.Name})} <br>
 #end
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
  *		{@link Pointer#get${sizePrim}AtOffset(long)} / {@link Pointer#set${sizePrim}AtOffset(long, long)} <br>
 #end
  *</li>
@@ -48,7 +79,7 @@ import static org.bridj.SizeT.safeIntCast;
 #foreach ($prim in $primitives)
  *		{@link Pointer#get${prim.CapName}s(int)} / {@link Pointer#set${prim.CapName}s(${prim.Name}[])} ; With an offset : {@link Pointer#get${prim.CapName}sAtOffset(long, int)} / {@link Pointer#set${prim.CapName}sAtOffset(long, ${prim.Name}[])}<br>
 #end
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
  *		{@link Pointer#get${sizePrim}s(int)} / {@link Pointer#set${sizePrim}s(long[])} ; With an offset : {@link Pointer#get${sizePrim}sAtOffset(long, int)} / {@link Pointer#set${sizePrim}sAtOffset(long, long[])}<br>
 #end
  *  </li>
@@ -71,7 +102,7 @@ import static org.bridj.SizeT.safeIntCast;
  * <p>
  * <ul>
  *	<li>Getting the pointer to a struct / a C++ class / a COM object :
- *		{@link Pointer#pointerTo(NativeObject)}
+ *		{@link Pointer#getPointer(NativeObject)}
  *  </li>
  *  <li>Allocating a dynamic callback (without a static {@link Callback} definition, which would be the preferred way) :<br>
  *      {@link Pointer#allocateDynamicCallback(DynamicCallback, org.bridj.ann.Convention.Style, Type, Type[])}
@@ -80,7 +111,7 @@ import static org.bridj.SizeT.safeIntCast;
 #foreach ($prim in $primitives)
  *		{@link Pointer#pointerTo${prim.CapName}(${prim.Name})} / {@link Pointer#allocate${prim.CapName}()}<br>
 #end
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
  *		{@link Pointer#pointerTo${sizePrim}(long)} / {@link Pointer#allocate${sizePrim}()}<br>
 #end
  *  </li>
@@ -88,7 +119,7 @@ import static org.bridj.SizeT.safeIntCast;
 #foreach ($prim in $primitivesNoBool)
  *		{@link Pointer#pointerTo${prim.CapName}s(${prim.Name}[])} or {@link Pointer#pointerTo${prim.CapName}s(${prim.BufferName})} / {@link Pointer#allocate${prim.CapName}s(long)}<br>
 #end
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
  *		{@link Pointer#pointerTo${sizePrim}s(long[])} / {@link Pointer#allocate${sizePrim}s(long)}<br>
 #end
  *		{@link Pointer#pointerToBuffer(Buffer)} / n/a<br>
@@ -141,18 +172,19 @@ import static org.bridj.SizeT.safeIntCast;
 public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 {
 
-#macro (declareCheckedPeer $validityCheckLength)
-		long checkedPeer = peer;
-		if (validStart != UNKNOWN_VALIDITY)
-			checkPeer(checkedPeer, $validityCheckLength);
-#end
-
 #macro (declareCheckedPeerAtOffset $byteOffset $validityCheckLength)
-    	long checkedPeer = peer + $byteOffset;
-		if (validStart != UNKNOWN_VALIDITY)
-			checkPeer(checkedPeer, $validityCheckLength);
+	long checkedPeer = getPeer() + $byteOffset;
+	if (validStart != UNKNOWN_VALIDITY && (
+			checkedPeer < validStart || 
+			(checkedPeer + $validityCheckLength) > validEnd
+	   )) {
+		invalidPeer(checkedPeer, $validityCheckLength);
+	}
 #end
 
+#macro (declareCheckedPeer $validityCheckLength)
+	#declareCheckedPeerAtOffset("0", $validityCheckLength)
+#end
 	
 #macro (docAllocateCopy $cPrimName $primWrapper)
 	/**
@@ -170,7 +202,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
      * The pointer won't be garbage-collected until all its views are garbage-collected themselves ({@link Pointer#offset(long)}, {@link Pointer#next(long)}, {@link Pointer#next()}).<br>
      * The returned pointer is also an {@code Iterable<$primWrapper>} instance that can be safely iterated upon :
      <pre>{@code
-     for (float f : pointerTo(1f, 2f, 3.3f))
+     for (float f : pointerToFloats(1f, 2f, 3.3f))
      	System.out.println(f); }</pre>
      * @param values initial values for the created memory location
      * @return pointer to a new memory location that initially contains the $cPrimName consecutive values provided in argument
@@ -294,7 +326,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 #end
 	
 	/** The NULL pointer is <b>always</b> Java's null value */
-    public static final Pointer NULL = null;
+    public static final Pointer<?> NULL = null;
 	
     /** 
      * Size of a pointer in bytes. <br>
@@ -308,8 +340,9 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     
-	protected static long UNKNOWN_VALIDITY = -1;
-	protected static long NO_PARENT = 0/*-1*/;
+	protected static final long UNKNOWN_VALIDITY = -1;
+	protected static final long NO_PARENT = 0/*-1*/;
+  private static final long POINTER_MASK = Platform.is64Bits() ? -1 : 0xFFFFFFFFL;
 	
 	/**
 	 * Default alignment used to allocate memory from the static factory methods in Pointer class (any value lower or equal to 1 means no alignment)
@@ -317,10 +350,12 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	public static final int defaultAlignment = Integer.parseInt(Platform.getenvOrProperty("BRIDJ_DEFAULT_ALIGNMENT", "bridj.defaultAlignment", "-1"));
 	
 	protected final PointerIO<T> io;
-	protected final long peer, offsetInParent;
+	private final long peer_;
+     protected final long offsetInParent;
 	protected final Pointer<?> parent;
 	protected volatile Object sibling;
-	protected final long validStart, validEnd;
+	protected final long validStart;
+     protected final long validEnd;
 
 	/**
 	 * Object responsible for reclamation of some pointed memory when it's not used anymore.
@@ -331,7 +366,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	
 	Pointer(PointerIO<T> io, long peer, long validStart, long validEnd, Pointer<?> parent, long offsetInParent, Object sibling) {
 		this.io = io;
-		this.peer = peer;
+		this.peer_ = peer;
 		this.validStart = validStart;
 		this.validEnd = validEnd;
 		this.parent = parent;
@@ -339,11 +374,14 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		this.sibling = sibling;
 		if (peer == 0)
 			throw new IllegalArgumentException("Pointer instance cannot have NULL peer ! (use null Pointer instead)");
-		if (BridJ.debugPointers)
+		if (BridJ.debugPointers) {
 			creationTrace = new RuntimeException().fillInStackTrace();
+          }
 	}
 	Throwable creationTrace;
-	
+     Throwable deletionTrace;
+     Throwable releaseTrace;
+     
 #foreach ($data in [ ["Ordered", true, ""], ["Disordered", false, "_disordered"] ])
 #set ($orderingPrefix = $data.get(0))
 #set ($ordered = $data.get(1))
@@ -422,8 +460,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		}
 #end
 
-
-#foreach ($sizePrim in ["SizeT", "CLong"])
+#foreach ($sizePrim in $integrals)
 
 #macro (setPrimitiveValue $primName $peer $value)
 	#if ($primName != "byte" && $primName != "boolean")
@@ -500,8 +537,13 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	public synchronized void release() {
 		Object sibling = this.sibling;
 		this.sibling = null;
-		if (sibling instanceof Pointer)
+		if (sibling instanceof Pointer) {
 			((Pointer)sibling).release();
+          }
+          //this.peer_ = 0;
+          if (BridJ.debugPointerReleases) {
+               releaseTrace = new RuntimeException().fillInStackTrace();
+          }
 	}
 
 	/**
@@ -519,7 +561,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	}
 	
 	/**
-	* Compare the byteCount bytes at the memory location pointed by this pointer to the byteCount bytes at the memory location pointer by other using the C @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcmp/">memcmp</a> function.<br>
+	* Compare the byteCount bytes at the memory location pointed by this pointer to the byteCount bytes at the memory location pointer by other using the C <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcmp/">memcmp</a> function.<br>
 	 * @return 0 if the two memory blocks are equal, -1 if this pointer's memory is "less" than the other and 1 otherwise.
 	 */
 	public int compareBytes(Pointer<?> other, long byteCount) {
@@ -527,7 +569,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	}
 	
 	/**
-	 * Compare the byteCount bytes at the memory location pointed by this pointer shifted by byteOffset to the byteCount bytes at the memory location pointer by other shifted by otherByteOffset using the C @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcmp/">memcmp</a> function.<br>
+	 * Compare the byteCount bytes at the memory location pointed by this pointer shifted by byteOffset to the byteCount bytes at the memory location pointer by other shifted by otherByteOffset using the C <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcmp/">memcmp</a> function.<br>
 	 * @deprecated Avoid using the byte offset methods variants unless you know what you're doing (may cause alignment issues)
 	 * @return 0 if the two memory blocks are equal, -1 if this pointer's memory is "less" than the other and 1 otherwise.
 	 */
@@ -550,10 +592,8 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		return "Pointer(peer = 0x" + Long.toHexString(getPeer()) + ", targetType = " + Utils.toString(getTargetType()) + ", order = " + order() + ")";
     }
     
-    protected final void checkPeer(long peer, long validityCheckLength) {
-		if (peer < validStart || (peer + validityCheckLength) > validEnd) {
-			throw new IndexOutOfBoundsException("Cannot access to memory data of length " + validityCheckLength + " at offset " + (peer - getPeer()) + " : valid memory start is " + validStart + ", valid memory size is " + (validEnd - validStart));
-		}
+    protected final void invalidPeer(long peer, long validityCheckLength) {
+		throw new IndexOutOfBoundsException("Cannot access to memory data of length " + validityCheckLength + " at offset " + (peer - getPeer()) + " : valid memory start is " + validStart + ", valid memory size is " + (validEnd - validStart));
 	}
 	
     private final long getCheckedPeer(long byteOffset, long validityCheckLength) {
@@ -609,7 +649,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
      */
 	@Deprecated
 	public Pointer<T> withoutValidityInformation() {
-		long peer = getPeer();
+          long peer = getPeer();
 		if (validStart == UNKNOWN_VALIDITY)
 			return this;
 		
@@ -671,7 +711,12 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	 * @return Address of the memory pointed to by this pointer
 	 */
 	public final long getPeer() {
-		return peer;
+          if (BridJ.debugPointerReleases) {
+               if (releaseTrace != null) {
+                    throw new RuntimeException("Pointer was released here:\n\t" + Utils.toString(releaseTrace).replaceAll("\n", "\n\t"));
+               }
+          }
+		return peer_;
 	}
     
 	/**
@@ -961,31 +1006,57 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     
     
     /**
+     * Get a pointer to an enum. 
+     */
+    public static <E extends Enum<E>> Pointer<IntValuedEnum<E>> pointerToEnum(IntValuedEnum<E> instance) {
+    	Class<E> enumClass;
+    	if (instance instanceof FlagSet) {
+    		enumClass = ((FlagSet)instance).getEnumClass();
+        } else if (instance instanceof Enum) {
+        	enumClass = (Class)instance.getClass();
+        } else 
+        	throw new RuntimeException("Expected a FlagSet or an Enum, got " + instance);
+
+    	PointerIO<IntValuedEnum<E>> io = (PointerIO)PointerIO.getInstance(DefaultParameterizedType.paramType(IntValuedEnum.class, enumClass));
+    	Pointer<IntValuedEnum<E>> p = allocate(io);
+    	p.setInt((int)instance.value());
+    	return p;
+    }
+
+    /**
+      * @deprecated Will be removed in a future version, please use {@link Pointer#getPointer(NativeObject)} instead.
+      */
+    @Deprecated
+    public static <N extends NativeObject> Pointer<N> pointerTo(N instance) {
+         return getPointer(instance);
+    }
+    
+    /**
      * Get a pointer to a native object (C++ or ObjectiveC class, struct, union, callback...) 
      */
-    public static <N extends NativeObject> Pointer<N> pointerTo(N instance) {
-    		return pointerTo(instance, null);
+    public static <N extends NativeObject> Pointer<N> getPointer(N instance) {
+    		return getPointer(instance, null);
     }
     /**
      * Get a pointer to a native object (C++ or ObjectiveC class, struct, union, callback...) 
      */
-    public static <N extends NativeObjectInterface> Pointer<N> pointerTo(N instance) {
-    		return (Pointer)pointerTo((NativeObject)instance);
+    public static <N extends NativeObjectInterface> Pointer<N> getPointer(N instance) {
+    		return (Pointer)getPointer((NativeObject)instance);
     }
     
     /**
      * Get a pointer to a native object, specifying the type of the pointer's target.<br>
      * In C++, the address of the pointer to an object as its canonical class is not always the same as the address of the pointer to the same object cast to one of its parent classes. 
      */
-    public static <R extends NativeObject> Pointer<R> pointerTo(NativeObject instance, Type targetType) {
+    public static <R extends NativeObject> Pointer<R> getPointer(NativeObject instance, Type targetType) {
 		return instance == null ? null : (Pointer<R>)instance.peer;
     }
     /**
-    * Get the address of a native object, specifying the type of the pointer's target (same as {@code pointerTo(instance, targetType).getPeer()}, see {@link Pointer#pointerTo(NativeObject, Type)}).<br>
+    * Get the address of a native object, specifying the type of the pointer's target (same as {@code getPointer(instance, targetType).getPeer()}, see {@link Pointer#getPointer(NativeObject, Type)}).<br>
      * In C++, the address of the pointer to an object as its canonical class is not always the same as the address of the pointer to the same object cast to one of its parent classes. 
      */
     public static long getAddress(NativeObject instance, Class targetType) {
-		return getPeer(pointerTo(instance, targetType));
+		return getPeer(getPointer(instance, targetType));
     }
     
 #docGetOffset("native object", "O extends NativeObject", "Pointer#getNativeObject(Type)")
@@ -1126,7 +1197,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     /**
-	 Assign a value to the pointed memory location, and return it (different behaviour from {@link List\#set(int, Object)} which returns the old value of that element !!!).<br>
+	 Assign a value to the pointed memory location, and return it (different behaviour from {@link List#set(int, Object)} which returns the old value of that element !!!).<br>
      Take the following C++ code fragment :
      <pre>{@code
 	int* array = new int[10];
@@ -1147,7 +1218,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	}
      }</pre>
      @throws RuntimeException if called on a raw and untyped {@code Pointer} instance (see {@link Pointer#asUntyped()} and {@link  Pointer#getTargetType()}) 
-	 @return The value that was given (not the old value as in {@link List\#set(int, Object)} !!!)
+	 @return The value that was given (not the old value as in {@link List#set(int, Object)} !!!)
 	 */
     public T set(T value) {
         return set(0, value);
@@ -1167,7 +1238,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     	throw new RuntimeException("Unexpected error", ex);
     }
 	/**
-     Sets the n-th element from this pointer, and return it (different behaviour from {@link List\#set(int, Object)} which returns the old value of that element !!!).<br>
+     Sets the n-th element from this pointer, and return it (different behaviour from {@link List#set(int, Object)} which returns the old value of that element !!!).<br>
      This is equivalent to the C/C++ square bracket assignment syntax.<br>
      Take the following C++ code fragment :
      <pre>{@code
@@ -1188,7 +1259,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
      @param index offset in pointed elements at which the value should be copied. Can be negative if the pointer was offset and the memory before it is valid.
      @param value value to set at pointed memory location
      @throws RuntimeException if called on a raw and untyped {@code Pointer} instance (see {@link Pointer#asUntyped()} and {@link  Pointer#getTargetType()})
-     @return The value that was given (not the old value as in {@link List\#set(int, Object)} !!!)
+     @return The value that was given (not the old value as in {@link List#set(int, Object)} !!!)
 	 */
 	public T set(long index, T value) {
         getIO("Cannot set pointed value").set(this, index, value);
@@ -1249,7 +1320,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		Pointer p = (Pointer)obj;
 		return getPeer() == p.getPeer();
 	}
-	
+  
 	/**
      * Create a pointer out of a native memory address
      * @param peer native memory address that is to be converted to a pointer
@@ -1257,7 +1328,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
      */
     @Deprecated
     public static Pointer<?> pointerToAddress(long peer) {
-        return newPointer(null, peer, true, UNKNOWN_VALIDITY, UNKNOWN_VALIDITY, null, NO_PARENT, null, null);
+    	return pointerToAddress(peer, (PointerIO) null);
     }
 
     /**
@@ -1299,8 +1370,30 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	 * @return a pointer with the provided address : {@code pointer.getPeer() == peer }
      */
     public static <P> Pointer<P> pointerToAddress(long peer, PointerIO<P> io) {
+    	if (BridJ.cachePointers)
+    		return (Pointer<P>)localCachedPointers.get().get(peer, io);
+    	else
+    		return pointerToAddress_(peer, io);
+	}
+
+	private static <P> Pointer<P> pointerToAddress_(long peer, PointerIO<P> io) {
     	return newPointer(io, peer, true, UNKNOWN_VALIDITY, UNKNOWN_VALIDITY, null, NO_PARENT, null, null);
 	}
+
+	private static final int LRU_POINTER_CACHE_SIZE = 8;
+  private static final int LRU_POINTER_CACHE_TOLERANCE = 1;
+  private static final ThreadLocal<PointerLRUCache> localCachedPointers = new ThreadLocal<PointerLRUCache>() {
+      @Override
+      protected PointerLRUCache initialValue() {
+          return new PointerLRUCache(LRU_POINTER_CACHE_SIZE, LRU_POINTER_CACHE_TOLERANCE) {
+          	@Override
+          	protected <P> Pointer<P> pointerToAddress(long peer, PointerIO<P> io) {
+          		return pointerToAddress_(peer, io);
+          	}
+          };
+      }
+  };
+
 	/**
      * Create a pointer out of a native memory address
      * @param io PointerIO instance that knows how to read the elements pointed by the resulting pointer 
@@ -1332,6 +1425,18 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
      */
     public static Pointer<?> pointerToAddress(long peer, long size, Releaser releaser) {
         return newPointer(null, peer, true, peer, peer + size, null, NO_PARENT, releaser, null);
+    }
+    
+	/**
+     * Create a pointer out of a native memory address
+     * @param io PointerIO instance that knows how to read the elements pointed by the resulting pointer 
+	 * @param releaser object responsible for reclaiming the native memory once whenever the returned pointer is garbage-collected 
+	 * @param size number of bytes known to be readable at the pointed address 
+	 * @param peer native memory address that is to be converted to a pointer
+	 * @return a pointer with the provided address : {@code pointer.getPeer() == peer }
+     */
+    public static <P> Pointer<P> pointerToAddress(long peer, long size, PointerIO<P> io, Releaser releaser) {
+        return newPointer(io, peer, true, peer, peer + size, null, NO_PARENT, releaser, null);
     }
 	
 	/**
@@ -1384,14 +1489,12 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		final Releaser releaser,
 		Object sibling)
 	{
+    peer = peer & POINTER_MASK;
 		if (peer == 0)
 			return null;
 		
-		if (validEnd != UNKNOWN_VALIDITY) {
-			long size = validEnd - validStart;
-			if (size <= 0)
-				return null;
-		}
+		if (validEnd != UNKNOWN_VALIDITY && validEnd <= validStart)
+			return null;
 		
 		if (releaser == null) {
 			if (ordered) {
@@ -1410,6 +1513,9 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 						this.rel = null;
 						rel.release(this);
 					}
+                         //this.peer_ = 0;
+                         if (BridJ.debugPointerReleases)
+                              releaseTrace = new RuntimeException().fillInStackTrace();
 				}
 				protected void finalize() {
 					release();
@@ -1634,12 +1740,19 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 			assert p.getSibling() == null;
 			assert p.validStart == p.getPeer();
 			
-		if (BridJ.debugPointers)
-			BridJ.info("Freeing pointer " + p + "\n(Creation trace = \n\t" + Utils.toString(p.creationTrace).replaceAll("\n", "\n\t") + "\n)", new RuntimeException().fillInStackTrace());
-		
-			if (!BridJ.debugNeverFree)
-				JNI.free(p.getPeer());
-    	}
+               if (BridJ.debugPointers) {
+                    p.deletionTrace = new RuntimeException().fillInStackTrace();
+               	BridJ.info("Freeing pointer " + p +
+                         " (peer = " + p.getPeer() +
+                         ", validStart = " + p.validStart +
+                         ", validEnd = " + p.validEnd + 
+                         ", validBytes = " + p.getValidBytes() + 
+                         ").\nCreation trace:\n\t" + Utils.toString(p.creationTrace).replaceAll("\n", "\n\t") +
+                         "\nDeletion trace:\n\t" + Utils.toString(p.deletionTrace).replaceAll("\n", "\n\t"));
+               }
+          	if (!BridJ.debugNeverFree)
+          		JNI.free(p.getPeer());
+          }
     }
     
     /**
@@ -1833,7 +1946,12 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 			return null;
 		
 		if (!buffer.isDirect()) {
-			return pointerTo${prim.CapName}s(buffer.array());
+      ${prim.Name}[] array = buffer.array();
+      int offset = buffer.arrayOffset();
+      int length = array.length - offset;
+      Pointer<${prim.WrapperName}> ptr = allocate${prim.CapName}s(length);
+      ptr.set${prim.CapName}sAtOffset(0, array, offset, length);
+			return ptr;
 			//throw new UnsupportedOperationException("Cannot create pointers to indirect ${prim.BufferName} buffers");
 		}
 		
@@ -2115,7 +2233,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		return setArrayAtOffset(0L, array);
 	}
 	
-	#foreach ($sizePrim in ["SizeT", "CLong"])
+	#foreach ($sizePrim in $integrals)
 //-- size primitive: $sizePrim --
 
 #docAllocateCopy($sizePrim $sizePrim)
@@ -2163,13 +2281,13 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     public long get${sizePrim}() {
 		return ${sizePrim}.SIZE == 8 ? 
 			getLong() : 
-			getInt();
+			getInt();// & 0xFFFFFFFFL;
 	}
 #docGetOffset($sizePrim $sizePrim "Pointer#get${sizePrim}()")
     public long get${sizePrim}AtOffset(long byteOffset) {
 		return ${sizePrim}.SIZE == 8 ? 
 			getLongAtOffset(byteOffset) : 
-			getIntAtOffset(byteOffset);
+			getIntAtOffset(byteOffset);// & 0xFFFFFFFFL;
 	}
 #docGetIndex($sizePrim "get${sizePrim}AtOffset(valueIndex * ${sizePrim}.SIZE")
 	public long get${sizePrim}AtIndex(long valueIndex) {
@@ -2368,7 +2486,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
 
     /**
-     * Copy bytes from the memory location indicated by this pointer to that of another pointer (with byte offsets for both the source and the destination), using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function.<br>
+     * Copy bytes from the memory location indicated by this pointer to that of another pointer (with byte offsets for both the source and the destination), using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function.<br>
      * If the destination and source memory locations are likely to overlap, {@link Pointer#moveBytesAtOffsetTo(long, Pointer, long, long)} must be used instead.
      */
     @Deprecated
@@ -2379,7 +2497,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     /**
-     * Copy bytes from the memory location indicated by this pointer to that of another pointer using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function.<br>
+     * Copy bytes from the memory location indicated by this pointer to that of another pointer using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function.<br>
      * If the destination and source memory locations are likely to overlap, {@link Pointer#moveBytesAtOffsetTo(long, Pointer, long, long)} must be used instead.<br>
      * See {@link Pointer#copyBytesAtOffsetTo(long, Pointer, long, long)} for more options.
      */
@@ -2389,7 +2507,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     /**
-     * Copy bytes from the memory location indicated by this pointer to that of another pointer (with byte offsets for both the source and the destination), using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memmove/">memmove</a> C function.<br>
+     * Copy bytes from the memory location indicated by this pointer to that of another pointer (with byte offsets for both the source and the destination), using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memmove/">memmove</a> C function.<br>
      * Works even if the destination and source memory locations are overlapping.
      */
     @Deprecated
@@ -2400,7 +2518,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     /**
-     * Copy bytes from the memory location indicated by this pointer to that of another pointer, using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memmove/">memmove</a> C function.<br>
+     * Copy bytes from the memory location indicated by this pointer to that of another pointer, using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memmove/">memmove</a> C function.<br>
      * Works even if the destination and source memory locations are overlapping.
      */
 	public Pointer<T> moveBytesTo(Pointer<?> destination, long byteCount) {
@@ -2408,7 +2526,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     /**
-     * Copy all valid bytes from the memory location indicated by this pointer to that of another pointer, using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memmove/">memmove</a> C function.<br>
+     * Copy all valid bytes from the memory location indicated by this pointer to that of another pointer, using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memmove/">memmove</a> C function.<br>
      * Works even if the destination and source memory locations are overlapping.
      */
 	public Pointer<T> moveBytesTo(Pointer<?> destination) {
@@ -2437,14 +2555,14 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     }
     
     /**
-    * Copy remaining bytes from this pointer to a destination using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function (see {@link Pointer#copyBytesTo(Pointer, long)}, {@link Pointer#getValidBytes()})
+    * Copy remaining bytes from this pointer to a destination using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function (see {@link Pointer#copyBytesTo(Pointer, long)}, {@link Pointer#getValidBytes()})
      */
     public Pointer<T> copyTo(Pointer<?> destination) {
     		return copyTo(destination, getValidElements());
     }
     
     /**
-    * Copy remaining elements from this pointer to a destination using the @see <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function (see {@link Pointer#copyBytesAtOffsetTo(long, Pointer, long, long)}, {@link Pointer#getValidBytes})
+    * Copy remaining elements from this pointer to a destination using the <a href="http://www.cplusplus.com/reference/clibrary/cstring/memcpy/">memcpy</a> C function (see {@link Pointer#copyBytesAtOffsetTo(long, Pointer, long, long)}, {@link Pointer#getValidBytes})
      */
     public Pointer<T> copyTo(Pointer<?> destination, long elementCount) {
     		PointerIO<T> io = getIO("Cannot copy untyped pointer without byte count information. Please use copyBytesAtOffsetTo(offset, destination, destinationOffset, byteCount) instead");
@@ -2706,26 +2824,26 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 		 * They are stored with a first byte that indicates the length of the string, followed by the ascii or extended ascii chars of the string (no support for multibyte encoding).<br>
 		 * They are often used in very old Mac OS programs and / or Pascal programs.<br>
 		 * Usual corresponding C types : {@code unsigned char* } and {@code const unsigned char* }<br>
-		 * Corresponding Pascal type : {@code ShortString } (see @see <a href="http://www.codexterity.com/delphistrings.htm">http://www.codexterity.com/delphistrings.htm</a>)<br>
+		 * Corresponding Pascal type : {@code ShortString } (see <a href="http://www.codexterity.com/delphistrings.htm">http://www.codexterity.com/delphistrings.htm</a>)<br>
 		 * See {@link Pointer#pointerToString(String, StringType, Charset)}, {@link Pointer#getString(StringType)}, {@link Pointer#setString(String, StringType)}, 
 		 */
         PascalShort(false, true),
 		/**
 		 * Wide Pascal strings are ref-counted unicode strings that look like WideC strings but are prepended with a ref count and length (both 32 bits ints).<br>
 		 * They are the current default in Delphi (2010).<br>
-		 * Corresponding Pascal type : {@code WideString } (see @see <a href="http://www.codexterity.com/delphistrings.htm">http://www.codexterity.com/delphistrings.htm</a>)<br>
+		 * Corresponding Pascal type : {@code WideString } (see <a href="http://www.codexterity.com/delphistrings.htm">http://www.codexterity.com/delphistrings.htm</a>)<br>
 		 * See {@link Pointer#pointerToString(String, StringType, Charset)}, {@link Pointer#getString(StringType)}, {@link Pointer#setString(String, StringType)}, 
 		 */
         PascalWide(true, true),
         /**
 		 * Pascal ANSI strings are ref-counted single-byte strings that look like C strings but are prepended with a ref count and length (both 32 bits ints).<br>
-		 * Corresponding Pascal type : {@code AnsiString } (see @see <a href="http://www.codexterity.com/delphistrings.htm">http://www.codexterity.com/delphistrings.htm</a>)<br>
+		 * Corresponding Pascal type : {@code AnsiString } (see <a href="http://www.codexterity.com/delphistrings.htm">http://www.codexterity.com/delphistrings.htm</a>)<br>
 		 * See {@link Pointer#pointerToString(String, StringType, Charset)}, {@link Pointer#getString(StringType)}, {@link Pointer#setString(String, StringType)}, 
 		 */
         PascalAnsi(false, true),
         /**
          * Microsoft's BSTR strings, used in COM, OLE, MS.NET Interop and MS.NET Automation functions.<br>
-         * See @see <a href="http://msdn.microsoft.com/en-us/library/ms221069.aspx">http://msdn.microsoft.com/en-us/library/ms221069.aspx</a> for more details.<br>
+         * See <a href="http://msdn.microsoft.com/en-us/library/ms221069.aspx">http://msdn.microsoft.com/en-us/library/ms221069.aspx</a> for more details.<br>
          * See {@link Pointer#pointerToString(String, StringType, Charset)}, {@link Pointer#getString(StringType)}, {@link Pointer#setString(String, StringType)}, 
 		 */
         BSTR(true, true),
@@ -3048,7 +3166,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	}
 	
 	/**
-	 * The update will take place inside the release() call
+	 * Allocate an array of pointers to strings.
 	 */
     public static Pointer<Pointer<$eltWrapper>> pointerTo${string}Strings(final String... strings) {
     	if (strings == null)
@@ -3060,15 +3178,11 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
         	public void release(Pointer<?> p) {
         		Pointer<Pointer<$eltWrapper>> mem = (Pointer<Pointer<$eltWrapper>>)p;
         		for (int i = 0; i < len; i++) {
-        			Pointer<$eltWrapper> pp = mem.get(i);
-        			if (pp != null)
-        				strings[i] = pp.get${string}String();
-        			pp = pointers[i];
+        			Pointer<$eltWrapper> pp = pointers[i];
         			if (pp != null)
         				pp.release();
-                }
-        	}
-        });
+        		}
+        }});
         for (int i = 0; i < len; i++)
             mem.set(i, pointers[i] = pointerTo${string}String(strings[i]));
 
@@ -3174,7 +3288,7 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
 	}
 	
     /**
-	 * Alias for {@link Pointer\#set(long, Object)} defined for more natural use from the Scala language.
+	 * Alias for {@link Pointer#set(long, Object)} defined for more natural use from the Scala language.
 	 */
 	public final void update(long index, T element) {
 		set(index, element);
@@ -3287,4 +3401,28 @@ public abstract class Pointer<T> implements Comparable<Pointer<?>>, Iterable<T>
     		out[i] = in[valuesOffset + i];
     	return out;
     }
+
+	public Pointer<T> setIntegralAtOffset(long byteOffset, AbstractIntegral value) {
+		switch (value.byteSize()) {
+			case 8:
+				setLongAtOffset(byteOffset, value.longValue());
+				break;
+			case 4:
+				setIntAtOffset(byteOffset, SizeT.safeIntCast(value.longValue()));
+				break;
+			default:
+				throw new UnsupportedOperationException("Unsupported integral size");
+		}
+		return this;
+	}
+  public long getIntegralAtOffset(long byteOffset, int integralSize) {
+		switch (integralSize) {
+			case 8:
+				return getLongAtOffset(byteOffset);
+			case 4:
+				return getIntAtOffset(byteOffset);
+			default:
+				throw new UnsupportedOperationException("Unsupported integral size");
+		}
+	}
 }

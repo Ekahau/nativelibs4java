@@ -28,7 +28,7 @@ PATCH_FILE=`pwd`/$1
 #fi
 
 #echo "Checking out dyncall to $DYNCALL_HOME..."
-svn co https://dyncall.org/svn/dyncall/trunk $DYNCALL_HOME || failed "Failed to checkout dyncall to $DYNCALL_HOME" 
+svn co http://dyncall.org/svn/dyncall/trunk $DYNCALL_HOME || failed "Failed to checkout dyncall to $DYNCALL_HOME" 
 cd $DYNCALL_HOME || failed "Failed to go to $DYNCALL_HOME"
 
 echo "Applying BridJ's dyncall patches..."
@@ -39,7 +39,8 @@ else
 	PATCH_CMD=gpatch
 fi
 
-$PATCH_CMD -i $PATCH_FILE -N -p0 || ( rm -fR $DYNCALL_HOME && failed "Patch failed, deleted $DYNCALL_HOME" )
+$PATCH_CMD -i $PATCH_FILE -N -p0
+# $PATCH_CMD -i $PATCH_FILE -N -p0 || ( rm -fR $DYNCALL_HOME && failed "Patch failed, deleted $DYNCALL_HOME" )
 
 echo "Ensuring all diffed files are added to SVN..."
 svn add `find . -type f | grep -v .svn` 2> /dev/null 

@@ -3,6 +3,7 @@ package com.nativelibs4java.opencl;
 import static com.nativelibs4java.opencl.CLException.*;
 import static com.nativelibs4java.opencl.JavaCL.CL;
 import static com.nativelibs4java.opencl.library.OpenCLLibrary.*;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.*;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -15,9 +16,9 @@ import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_device_id;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_event;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_kernel;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_device_id;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_event;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_kernel;
 import com.nativelibs4java.util.NIOUtils;
 
 import org.bridj.*;
@@ -81,16 +82,12 @@ public class CLKernel extends CLAbstractEntity {
      * @since OpenCL 1.1
      */
     public Map<CLDevice, Long> getPreferredWorkGroupSizeMultiple() {
-    	try {
-	    	CLDevice[] devices = program.getDevices();
-	        Map<CLDevice, Long> ret = new HashMap<CLDevice, Long>(devices.length);
-	        for (CLDevice device : devices)
-	            ret.put(device, getKernelInfos().getIntOrLong(device.getEntity(), CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE));
-	        return ret;
-    	} catch (Throwable th) {
-    		// TODO check if supposed to handle OpenCL 1.1
-    		throw new UnsupportedOperationException("Cannot get CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE (OpenCL 1.1 feature).", th);
-    	}
+		program.getContext().getPlatform().requireMinVersionValue("CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE", 1.1);
+    	CLDevice[] devices = program.getDevices();
+        Map<CLDevice, Long> ret = new HashMap<CLDevice, Long>(devices.length);
+        for (CLDevice device : devices)
+            ret.put(device, getKernelInfos().getIntOrLong(device.getEntity(), CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE));
+        return ret;
     }
     
     /**

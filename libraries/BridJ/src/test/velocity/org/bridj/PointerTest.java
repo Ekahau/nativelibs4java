@@ -1,3 +1,33 @@
+/*
+ * BridJ - Dynamic and blazing-fast native interop for Java.
+ * http://bridj.googlecode.com/
+ *
+ * Copyright (c) 2010-2013, Olivier Chafik (http://ochafik.com/)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Olivier Chafik nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY OLIVIER CHAFIK AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package org.bridj;
 import org.bridj.cpp.*;
 import org.junit.Test;
@@ -552,19 +582,34 @@ public class PointerTest {
 		assertEquals(three, (${prim.Name})dest.get(2)$precisionArg);
 		assertEquals(zero, (${prim.Name})dest.get(3)$precisionArg);
 	}
-	
-	@Test
-	public void test${prim.BufferName}Update() {
-		// Non-direct buffer
-		${prim.BufferName} b = ${prim.BufferName}.allocate(1);
-		Pointer<	${prim.WrapperName}> p = pointerTo${prim.CapName}s(b);
-		for (${prim.Name} value : new ${prim.Name}[] { ${prim.value($v1)}, ${prim.value($v2)}, ${prim.value($v3)} }) { 
-			p.set(value);
-			assertEquals(value, (${prim.Name})p.get()$precisionArg);
-			p.updateBuffer(b);
-			assertEquals(value, b.get(0)$precisionArg);
-		}
-	}
+  
+  @Test
+  public void test${prim.BufferName}Update() {
+    // Non-direct buffer
+    ${prim.BufferName} b = ${prim.BufferName}.allocate(1);
+    Pointer<${prim.WrapperName}> p = pointerTo${prim.CapName}s(b);
+    for (${prim.Name} value : new ${prim.Name}[] { ${prim.value($v1)}, ${prim.value($v2)}, ${prim.value($v3)} }) { 
+      p.set(value);
+      assertEquals(value, (${prim.Name})p.get()$precisionArg);
+      p.updateBuffer(b);
+      assertEquals(value, b.get(0)$precisionArg);
+    }
+  }
+  
+  @Test
+  public void test${prim.BufferName}Slice() {
+    // Non-direct buffer
+    ${prim.BufferName} b = ${prim.BufferName}.allocate(2);
+    b.put(0, ${prim.value($v1)});
+    b.put(1, ${prim.value($v2)});
+
+    b.position(1);
+    ${prim.BufferName} bb = b.slice();
+    Pointer<${prim.WrapperName}> pp = pointerTo${prim.CapName}s(bb);
+
+    assertEquals(1, pp.getValidElements());
+    assertEquals(${prim.value($v2)}, pp.get${prim.CapName}()$precisionArg);
+  }
 	
 	@Test(expected = IllegalArgumentException.class)
 	public void testIllegal${prim.BufferName}() {
@@ -646,7 +691,7 @@ public class PointerTest {
 		assertEquals(${prim.rawValue($v2)}, p.get${prim.CapName}AtIndex(1)$precisionArg);
 		assertEquals(${prim.rawValue($v3)}, p.get${prim.CapName}AtIndex(2)$precisionArg);
 		
-		$rawType[] arr = p.get${prim.CapName}s();
+		${rawType}[] arr = p.get${prim.CapName}s();
 		assertEquals(${prim.rawValue($v1)}, arr[0]$precisionArg);
 		assertEquals(${prim.rawValue($v2)}, arr[1]$precisionArg);
 		assertEquals(${prim.rawValue($v3)}, arr[2]$precisionArg);
@@ -667,8 +712,8 @@ public class PointerTest {
 	
     		for (int type = 0; type <= 5; type++) {
 			Pointer<${prim.typeRef}> p = Pointer.allocate${prim.CapName}s(n);
-			$rawType[] expected = createExpected${rawCapName}s(n);
-			$rawType[] values = null;
+			${rawType}[] expected = createExpected${rawCapName}s(n);
+			${rawType}[] values = null;
 			
 			switch (type) {
 			case 0:
@@ -684,7 +729,7 @@ public class PointerTest {
 				values = p.get${prim.CapName}sAtOffset(0, expected.length);
 				break;
 			case 3:
-				values = new $rawType[n];
+				values = new ${rawType}[n];
 				for (int i = 0; i < n; i++) {
 #if ($prim.Name == "SizeT" || $prim.Name == "CLong")
 					p.set(i, new ${prim.Name}(expected[i]));
@@ -696,14 +741,14 @@ public class PointerTest {
 				}
 				break;
 			case 4:
-				values = new $rawType[n];
+				values = new ${rawType}[n];
 				for (int i = 0; i < n; i++) {
 					p.set${prim.CapName}AtOffset(i * ${primSize}, expected[i]);
 					values[i] = p.get${prim.CapName}AtOffset(i * ${primSize}); 
 				}
 				break;
 			case 5:
-				values = new $rawType[n];
+				values = new ${rawType}[n];
 				for (int i = 0; i < n; i++) {
 					p.set${prim.CapName}AtIndex(i, expected[i]);
 					values[i] = p.get${prim.CapName}AtIndex(i); 
@@ -735,7 +780,7 @@ public class PointerTest {
 			p.set${prim.CapName}sAtOffset(${primSize}, new ${prim.Name}[] { ${prim.value("5")}, ${prim.value("6")} });
 			assertEquals(${prim.value("5")}, (${prim.Name})p.get(1)$precisionArg);
 			assertEquals(${prim.value("6")}, (${prim.Name})p.get(2)$precisionArg);
-			$rawType[] a = p.get${prim.CapName}sAtOffset(${primSize}, 2);
+			${rawType}[] a = p.get${prim.CapName}sAtOffset(${primSize}, 2);
 			assertEquals(2, a.length);
 			assertEquals(${prim.rawValue("5")}, a[0]$precisionArg);
 			assertEquals(${prim.rawValue("6")}, a[1]$precisionArg);

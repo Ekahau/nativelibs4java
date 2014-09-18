@@ -56,9 +56,9 @@ public class Declarations extends Declaration implements DeclarationsHolder {
     public void setDeclarations(List<Declaration> declarations) {
         changeValue(this, this.declarations, declarations);
     }
-    public void setDeclarations(Declaration... declarations) {
-        setDeclarations(Arrays.asList(declarations));
-    }
+    // public void setDeclarations(Declaration... declarations) {
+    //     setDeclarations(Arrays.asList(declarations));
+    // }
     public List<Declaration> getDeclarations() {
         return unmodifiableList(declarations);
     }
@@ -85,4 +85,9 @@ public class Declarations extends Declaration implements DeclarationsHolder {
 			return true;
 		return super.replaceChild(child, by);
 	}
+
+    @Override
+    public DeclarationsHolder resolveHolder() {
+        return this;
+    }
 }

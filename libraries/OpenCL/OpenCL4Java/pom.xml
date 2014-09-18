@@ -30,10 +30,28 @@ For more info, please visit http://code.google.com/p/nativelibs4java/wiki/OpenCL
 	  <groupId>com.nativelibs4java</groupId>
 	  <artifactId>bridj</artifactId>
 	  <!--classifier>c-only</classifier-->
-	  <version>0.6.3-SNAPSHOT</version>
+	  <version>0.7-SNAPSHOT</version>
 	</dependency>
 	
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>regenerate</id>
+      <build>
+        <plugins>
+            <plugin>
+                <groupId>com.nativelibs4java</groupId>
+                <artifactId>maven-jnaerator-plugin</artifactId>
+                <version>${jnaerator.version}</version>
+                <configuration>
+                    <javaOutputDirectory>src/main/java</javaOutputDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
 

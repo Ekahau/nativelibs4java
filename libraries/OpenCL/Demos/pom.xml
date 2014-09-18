@@ -17,7 +17,7 @@
 
   <properties>
 	<shadedArtifactAttached>true</shadedArtifactAttached>
-    <mainClass>com.nativelibs4java.opencl.hardware.HardwareReport</mainClass>
+    <mainClass>com.nativelibs4java.opencl.demos.hardware.HardwareReport</mainClass>
   </properties>
   
   <dependencies>
@@ -44,6 +44,18 @@
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-shade-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>full-package</id>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                        <shadedArtifactAttached>${shadedArtifactAttached}</shadedArtifactAttached>
+                    </configuration>
+                </execution>
+            </executions>
 		</plugin>
 
 	</plugins>

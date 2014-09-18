@@ -55,6 +55,7 @@
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
 				EnableEnhancedInstructionSet="0"
 				WarningLevel="3"
 				WarnAsError="true"
@@ -143,6 +144,7 @@
 				MinimalRebuild="true"
 				ExceptionHandling="1"
 				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
 				EnableEnhancedInstructionSet="0"
 				WarningLevel="4"
 				WarnAsError="true"
@@ -233,6 +235,7 @@
 				EnableFiberSafeOptimizations="true"
 				AdditionalIncludeDirectories="&quot;$(JAVA_HOME)\include&quot;;&quot;$(JAVA_HOME)\include\win32&quot;;.;..;$(DYNCALL_HOME)\dyncall;$(DYNCALL_HOME)\dyncall\dyncall;$(DYNCALL_HOME)\dyncall\dyncallback;$(DYNCALL_HOME)\dyncall\dynload"
 				ExceptionHandling="1"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="0"
 				WarningLevel="3"
@@ -323,6 +326,7 @@
 				EnableFiberSafeOptimizations="true"
 				AdditionalIncludeDirectories="&quot;$(JAVA_HOME)\include&quot;;&quot;$(JAVA_HOME)\include\win32&quot;;.;..;$(DYNCALL_HOME)\dyncall;$(DYNCALL_HOME)\dyncall\dyncall;$(DYNCALL_HOME)\dyncall\dyncallback;$(DYNCALL_HOME)\dyncall\dynload"
 				ExceptionHandling="1"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="0"
 				WarningLevel="3"
@@ -397,6 +401,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\bridj\Errors.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\bridj\FunctionHandler.c"
 				>
 			</File>
@@ -409,7 +417,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\bridj\JNI.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\bridj\ObjCHandler.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\bridj\Platform.c"
 				>
 			</File>
 			<File
@@ -440,22 +456,10 @@
 				RelativePath="..\..\..\bridj\ThreadLocal.c"
 				>
 			</File>
-			<Filter
-				Name="jni"
+			<File
+				RelativePath="..\..\..\bridj\Utils.c"
 				>
-				<File
-					RelativePath="..\..\..\bridj\JNI.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\bridj\Platform.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\bridj\Pointer.c"
-					>
-				</File>
-			</Filter>
+			</File>
 		</Filter>
 		<Filter
 			Name="Fichiers d&apos;en-tête"

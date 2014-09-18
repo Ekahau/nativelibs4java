@@ -51,7 +51,8 @@ public class SourceFile extends Element implements DeclarationsHolder {
 
 	@Override
 	public boolean replaceChild(Element child, Element by) {
-		return replaceChild(declarations, Declaration.class, this, child, by);
+		return replaceChild(declarations, Declaration.class, this, child, by) ||
+            super.replaceChild(child, by);
 	}
 	/*
 	public void setFile(URL file) {
@@ -107,4 +108,9 @@ public class SourceFile extends Element implements DeclarationsHolder {
 	public String getLibrary() {
 		return library;
 	}
+
+    @Override
+    public DeclarationsHolder resolveHolder() {
+        return this;
+    }
 }

@@ -2,15 +2,15 @@
 package com.nativelibs4java.opencl;
 import static com.nativelibs4java.opencl.CLException.error;
 import static com.nativelibs4java.opencl.JavaCL.CL;
-import static com.nativelibs4java.opencl.library.OpenCLLibrary.CL_FALSE;
-import static com.nativelibs4java.opencl.library.OpenCLLibrary.CL_QUEUE_PROPERTIES;
-import static com.nativelibs4java.opencl.library.OpenCLLibrary.CL_TRUE;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.CL_FALSE;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.CL_QUEUE_PROPERTIES;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.CL_TRUE;
 
 import java.util.EnumSet;
 
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_command_queue;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_event;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_mem;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_command_queue;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_event;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_mem;
 import org.bridj.*;
 import static org.bridj.Pointer.*;
 
@@ -67,6 +67,7 @@ public class CLQueue extends CLAbstractEntity {
 
 	@SuppressWarnings("deprecation")
 	public void setProperty(CLDevice.QueueProperties property, boolean enabled) {
+		context.getPlatform().requireMinVersionValue("clSetCommandQueueProperty", 1.0, 1.1);
 		error(CL.clSetCommandQueueProperty(getEntity(), property.value(), enabled ? CL_TRUE : CL_FALSE, 0));
 	}
 	
@@ -101,34 +102,122 @@ public class CLQueue extends CLAbstractEntity {
 	 * Enqueues a wait for a specific event or a list of events to complete before any future commands queued in the this queue are executed.
 	 */
 	public void enqueueWaitForEvents(CLEvent... eventsToWaitFor) {
+		context.getPlatform().requireMinVersionValue("clEnqueueWaitForEvents", 1.1, 1.2);
 		#declareReusablePtrs()
 		#declareEventsIn()
         if (eventsIn == null)
             return;
         error(CL.clEnqueueWaitForEvents(getEntity(), #eventsInArgsRaw()));
 	}
+	
 
 	/**
-#documentCallsFunction("clEnqueueBarrier")
+#documentCallsFunction("clEnqueueMigrateMemObjects")
+	 * Enqueues a command to indicate which device a set of memory objects should be associated with.
+	 */
+	public CLEvent enqueueMigrateMemObjects(CLMem[] memObjects, EnumSet<CLMem.Migration> flags, CLEvent... eventsToWaitFor) {
+		context.getPlatform().requireMinVersionValue("clEnqueueMigrateMemObjects", 1.2);
+		#declareReusablePtrsAndEventsInOut()
+		int[] n = ptrs.int1Array;
+		Pointer<SizeT> pMems = pointerToEntities(memObjects, n);
+		error(CL.clEnqueueMigrateMemObjects(
+			getEntity(),
+			n[0],
+			getPeer(pMems),
+			CLMem.Migration.getValue(flags),
+			#eventsInOutArgsRaw()
+		));
+		#returnEventOut("this")
+	}
+
+	// 
+	public interface NativeKernel {
+		void execute(Pointer[] bufferPointers);
+	}
+
+	private static Pointer<SizeT> pointerToEntities(CLAbstractEntity[] entities, int[] n) {
+		int nn = 0;
+		Pointer<SizeT> pEntities = allocateSizeTs(entities.length);
+		for (CLAbstractEntity entity : entities) {
+			if (entity != null) {
+				pEntities.setSizeTAtIndex(nn++, entity.getEntity());
+			}
+		}
+		n[0] = nn;
+		return pEntities;
+	}
+	/**
+#documentCallsFunction("clEnqueueNativeKernel")
+	 * Enqueues a command to execute a Java callback with direct access to buffer memory.
+	 */
+	/*
+	public CLEvent enqueueNativeKernel(NativeKernel kernel, CLMem[] buffers, CLEvent... eventsToWaitFor) {
+		// TODO check 1.1 or 1.2?
+		context.getPlatform().requireMinVersionValue("clEnqueueNativeKernel", 1.2);
+		#declareReusablePtrsAndEventsInOut()
+		int[] n = ptrs.int1Array;
+		Pointer<SizeT> pMems = pointerToEntities(buffers, n);
+		error(CL.clEnqueueNativeKernel(
+			getEntity(),
+			n[0],
+			getPeer(pMems),
+			CLMem.Migration.getValue(flags),
+			#eventsInOutArgsRaw()
+		));
+		#returnEventOut("this")
+	}
+	*/
+
+	/**
+#documentCallsFunction("clEnqueueBarrierWithWaitList")
 	 * Enqueue a barrier operation.<br/>
 	 * The enqueueBarrier() command ensures that all queued commands in command_queue have finished execution before the next batch of commands can begin execution. <br/>
 	 * enqueueBarrier() is a synchronization point.
+#documentEventsToWaitForAndReturn()
 	 */
-	public void enqueueBarrier() {
-		error(CL.clEnqueueBarrier(getEntity()));
+	public CLEvent enqueueBarrier(CLEvent... eventsToWaitFor) {
+		if (context.getPlatform().getVersionValue() >= 1.2 ||
+			eventsToWaitFor != null && eventsToWaitFor.length > 0)
+		{
+			context.getPlatform().requireMinVersionValue("clEnqueueBarrierWithWaitList", 1.2);
+			#declareReusablePtrsAndEventsInOut()
+			error(CL.clEnqueueBarrierWithWaitList(
+				getEntity(),
+				#eventsInOutArgsRaw()
+			));
+			#returnEventOut("this")	
+		} else {
+			context.getPlatform().requireMinVersionValue("clEnqueueBarrier", 1.1, 1.2);
+			error(CL.clEnqueueBarrier(getEntity()));
+			return null;
+		}
 	}
 
 	/**
-#documentCallsFunction("clEnqueueMarker")
+#documentCallsFunction("clEnqueueMarkerWithWaitList")
 	 * Enqueue a marker command to command_queue. <br/>
 	 * The marker command returns an event which can be used by to queue a wait on this marker event i.e. wait for all commands queued before the marker command to complete.
-	 * @return Event object that identifies this command and can be used to query or queue a wait for the command to complete.
+#documentEventsToWaitForAndReturn()
 	 */
-	public CLEvent enqueueMarker() {
-		#declareReusablePtrs()
-		Pointer<cl_event> eventOut = ptrs.event_out;
-		error(CL.clEnqueueMarker(getEntity(), getPeer(eventOut)));
-		#returnEventOut("this")
+	@Deprecated
+	public CLEvent enqueueMarker(CLEvent... eventsToWaitFor) {
+		if (context.getPlatform().getVersionValue() >= 1.2 ||
+			eventsToWaitFor != null && eventsToWaitFor.length > 0)
+		{
+			context.getPlatform().requireMinVersionValue("clEnqueueMarkerWithWaitList", 1.2);
+			#declareReusablePtrsAndEventsInOut()
+	    	error(CL.clEnqueueMarkerWithWaitList(
+				getEntity(),
+				#eventsInOutArgsRaw()
+			));
+			#returnEventOut("this")
+		} else {
+			context.getPlatform().requireMinVersionValue("clEnqueueMarker", 1.1, 1.2);
+			#declareReusablePtrs()
+			Pointer<cl_event> eventOut = ptrs.event_out;
+			error(CL.clEnqueueMarker(getEntity(), getPeer(eventOut)));
+			#returnEventOut("this")
+		}
 	}
 
 	/**

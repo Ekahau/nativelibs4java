@@ -5,6 +5,7 @@ import com.nativelibs4java.opencl.library.OpenGLContextUtils;
 import com.nativelibs4java.util.EnumValue;
 import com.nativelibs4java.util.EnumValues;
 import static com.nativelibs4java.opencl.library.OpenCLLibrary.*;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.*;
 
 import org.bridj.*;
 import org.bridj.ann.*;
@@ -12,6 +13,11 @@ import static org.bridj.Pointer.*;
 
 import java.nio.ByteOrder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.logging.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static com.nativelibs4java.opencl.JavaCL.*;
 import static com.nativelibs4java.opencl.CLException.*;
 
@@ -352,15 +358,6 @@ public class CLPlatform extends CLAbstractEntity {
         #checkPErr();
         return new CLContext(this, ids, context);
     }
-    /*
-    public static final clCreateContext_arg1_callback errorCallback = new clCreateContext_arg1_callback() {
-		public void apply(Pointer<java.lang.Byte > errInfo, Pointer<? > private_info, @Ptr long cb, Pointer<? > user_data) {
-			//new RuntimeException().printStackTrace();
-			String log = errInfo.getCString();
-			System.out.println("[JavaCL] " + log);
-			throw new CLException(log, -1);
-		}
-	};*/
 
     /**
 #documentCallsFunction("clGetDeviceIDs")
@@ -405,6 +402,42 @@ public class CLPlatform extends CLAbstractEntity {
         return infos.getString(getEntity(), CL_PLATFORM_VERSION);
     }
 
+    private double versionValue = Double.NaN;
+    private static final Pattern VERSION_PATTERN = Pattern.compile("OpenCL (\\d+\\.\\d+)\\b.*");
+    double getVersionValue() {
+    	if (Double.isNaN(versionValue)) {
+    		String versionString = getVersion();
+    		Matcher matcher = VERSION_PATTERN.matcher(versionString);
+    		if (matcher.matches()) {
+    			String str = matcher.group(1);
+    			versionValue = Double.parseDouble(str);
+    		} else {
+    			log(Level.SEVERE, "Failed to parse OpenCL version: '" + versionString + "'");
+    		}
+    	}
+    	return versionValue;
+    }
+    void requireMinVersionValue(String feature, double minValue) {
+    	requireMinVersionValue(feature, minValue, Double.NaN);
+    }
+    private Set<String> featuresCheckedForVersion = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    void requireMinVersionValue(String feature, double minValue, double deprecationValue) {
+    	double value = getVersionValue();
+    	if (value < minValue) {
+    		throw new CLVersionException(feature + " requires OpenCL version " + minValue +
+    			" (detected version is " + value + ")");
+    	} else if (!Double.isNaN(deprecationValue) && featuresCheckedForVersion.add(feature)) {
+    		Level level = null;
+    		if (value < deprecationValue && JavaCL.verbose)
+    			level = Level.INFO;
+    		else if (value >= deprecationValue)
+    			level = Level.WARNING;
+    		if (level != null && shouldLog(level))
+    			log(level, feature + " is deprecated from OpenCL version " + deprecationValue +
+    			" (detected version is " + value + ")");
+    	}
+    }
+
     /**
      * Platform name string.
      */
@@ -428,21 +461,15 @@ public class CLPlatform extends CLAbstractEntity {
     @InfoName("CL_PLATFORM_EXTENSIONS")
     public String[] getExtensions() {
         if (extensions == null) {
-            extensions = infos.getString(getEntity(), CL_PLATFORM_EXTENSIONS).split("\\s+");
+            extensions = new LinkedHashSet<String>(Arrays.asList(infos.getString(getEntity(), CL_PLATFORM_EXTENSIONS).split("\\s+")));
         }
-        return extensions;
+        return extensions.toArray(new String[extensions.size()]);
     }
+    private Set<String> extensions;
 
-    private String[] extensions;
-
-    boolean hasExtension(String name) {
-        name = name.trim();
-        for (String x : getExtensions()) {
-            if (name.equals(x.trim())) {
-                return true;
-            }
-        }
-        return false;
+    public boolean hasExtension(String name) {
+        getExtensions();
+        return extensions.contains(name.trim());
     }
 
     @InfoName("cl_nv_device_attribute_query")
@@ -463,6 +490,19 @@ public class CLPlatform extends CLAbstractEntity {
     @InfoName("cl_khr_gl_sharing")
     public boolean isGLSharingSupported() {
         return hasExtension("cl_khr_gl_sharing") || hasExtension("cl_APPLE_gl_sharing");
+    }
+
+    /**
+     * Allows the implementation to release the resources allocated by the OpenCL compiler for this platform.
+     */
+    public void unloadPlatformCompiler() {
+    	if (getVersionValue() < 1.2) {
+			requireMinVersionValue("clUnloadCompiler", 1.1, 1.2);
+			error(CL.clUnloadCompiler());
+		} else {
+			requireMinVersionValue("clUnloadPlatformCompiler", 1.2);
+			error(CL.clUnloadPlatformCompiler(getEntity()));
+		}
     }
 
 }

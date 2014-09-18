@@ -28,12 +28,15 @@ public class CLMatrixUtils {
         
         return out;
     }
-    
+
+    public static long roundUp(long size, int blockSize) {
+        return ((size + blockSize - 1) / blockSize) * blockSize;
+    }
     
     public static <T> void matrixMultiply(
-            final CLMatrix2D<T> a, 
-            final CLMatrix2D<T> b, 
-            final CLMatrix2D<T> out) 
+            final CLMatrix2D<T> a,
+            final CLMatrix2D<T> b,
+            final CLMatrix2D<T> out)
             throws CLBuildException
     {
         final CLKernels kernels = a.getKernels();
@@ -45,10 +48,10 @@ public class CLMatrixUtils {
                         return out.getEvents().performWrite(new CLEvents.Action() {
                             public CLEvent perform(final CLEvent[] cevents) {
                                 CLEvent evt = kernels.matrixMultiply(
-                                    primitive, 
-                                    a.getBuffer(), (int)a.getRowCount(), (int)a.getColumnCount(), 
-                                    b.getBuffer(), (int)b.getRowCount(), (int)b.getColumnCount(), 
-                                    out.getBuffer(), 
+                                    primitive,
+                                    a.getBuffer(), a.getRowCount(), a.getColumnCount(), a.getStride(), a.getBlockSize(),
+                                    b.getBuffer(), b.getRowCount(), b.getColumnCount(), b.getStride(), b.getBlockSize(),
+                                    out.getBuffer(),
                                     join(aevents, bevents, cevents)
                                 );
                                 return evt;
@@ -90,8 +93,9 @@ public class CLMatrixUtils {
                     public CLEvent perform(final CLEvent[] cevents) {
                         CLEvent evt = kernels.matrixTranspose(
                             primitive,
-                            a.getBuffer(), (int)a.getRowCount(), (int)a.getColumnCount(), 
-                            out.getBuffer(), 
+                            a.getBuffer(),
+                            a.getRowCount(), a.getColumnCount(), a.getStride(),
+                            out.getBuffer(),
                             join(aevents, cevents)
                         );
                         return evt;
@@ -131,7 +135,9 @@ public class CLMatrixUtils {
                 return out.getEvents().performWrite(new CLEvents.Action() {
 
                     public CLEvent perform(CLEvent[] oevents) {
-                        return in.getKernels().op1(in.getPrimitive(), fun, in.getBuffer(), in.getRowCount(), in.getColumnCount(), out.getBuffer(), join(ievents, oevents));
+                        return in.getKernels().op1(in.getPrimitive(), fun, in.getBuffer(),
+                                in.getRowCount(), in.getColumnCount(), in.getStride(),
+                                out.getBuffer(), join(ievents, oevents));
                     }
                 });
             }
@@ -150,7 +156,10 @@ public class CLMatrixUtils {
                         return out.getEvents().performWrite(new CLEvents.Action() {
 
                             public CLEvent perform(CLEvent[] oevents) {
-                                return in1.getKernels().op2(in1.getPrimitive(), fun, in1.getBuffer(), in2.getBuffer(), in1.getRowCount(), in1.getColumnCount(), out.getBuffer(), join(i1events, i2events, oevents));
+                                return in1.getKernels().op2(in1.getPrimitive(), fun,
+                                        in1.getBuffer(), in2.getBuffer(),
+                                        in1.getRowCount(), in1.getColumnCount(), in1.getStride(),
+                                        out.getBuffer(), join(i1events, i2events, oevents));
                             }
                         });
                     }
@@ -159,13 +168,18 @@ public class CLMatrixUtils {
         });
         return out;
     }
+
     public static <V> CLMatrix2D<V> op2(final CLMatrix2D<V> in, final Fun2 fun, final V s2, final CLMatrix2D<V> out) throws CLBuildException {
         in.getEvents().performRead(new CLEvents.Action() {
             public CLEvent perform(final CLEvent[] ievents) {
                 return out.getEvents().performWrite(new CLEvents.Action() {
 
                     public CLEvent perform(CLEvent[] oevents) {
-                        return in.getKernels().op2(in.getPrimitive(), fun, in.getBuffer(), s2, in.getRowCount(), in.getColumnCount(), out.getBuffer(), join(ievents, oevents));
+                        return in.getKernels().op2(
+                            in.getPrimitive(), fun, in.getBuffer(), s2,
+                            in.getRowCount(), in.getColumnCount(), in.getStride(),
+                            out.getBuffer(),
+                            join(ievents, oevents));
                     }
                 });
             }

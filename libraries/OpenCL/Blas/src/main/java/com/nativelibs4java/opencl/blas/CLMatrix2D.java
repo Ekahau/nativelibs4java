@@ -15,6 +15,7 @@ import org.bridj.Pointer;
  * @author ochafik
  */
 public interface CLMatrix2D<T> {
+
     Primitive getPrimitive();
     Class<T> getPrimitiveClass();
     CLEvents getEvents();
@@ -23,11 +24,13 @@ public interface CLMatrix2D<T> {
     CLQueue getQueue();
     long getRowCount();
     long getColumnCount();
+    long getStride();
+    int getBlockSize();
     CLMatrix2D<T> blankClone();
     CLMatrix2D<T> blankMatrix(long rows, long columns);
     CLKernels getKernels();
     
-    void write(final Pointer<T> b);
-    void read(final Pointer<T> b);
+    void write(Pointer<T> b);
+    void read(Pointer<T> b);
     Pointer<T> read();
 }

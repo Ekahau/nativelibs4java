@@ -10,10 +10,10 @@ import org.bridj.Pointer;
 import static org.bridj.Pointer.*;
 import com.nativelibs4java.test.MiscTestUtils;
 import java.util.List;
+import org.junit.Ignore;
 import org.junit.runners.Parameterized;
 
 /**
- *
  * @author Kazo Csaba
  */
 @SuppressWarnings("unchecked")
@@ -40,6 +40,7 @@ public class BinaryKernelTest extends AbstractCommon {
 				  "} ");
 		program.build();
 		Map<CLDevice, byte[]> binaries = program.getBinaries();
+		String src = program.getSource();
 		program.release();
 		
 		CLProgram binaryProgram = context.createProgram(binaries, null);
@@ -62,5 +63,22 @@ public class BinaryKernelTest extends AbstractCommon {
 		assertEquals(target.getValidElements(), source.getValidElements());
 		for (int i=0; i<4; i++)
 			assertEquals(source.get(i), target.get(i));
+    }
+    
+    /**
+     * Test from issue https://github.com/ochafik/nativelibs4java/issues/453
+     */
+    @Test
+    public void cachingTest() {
+        CLContext clcontext = JavaCL.createBestContext();
+        CLProgram ap = clcontext.createProgram("__kernel void add(int a, int b, __global int* c) { *c = a + b; }");
+        ap.createKernel("add");
+        Map<CLDevice, byte[]> addBins = ap.getBinaries();
+        Map<CLDevice, byte[]> subBins = clcontext.createProgram("__kernel void sub(int a, int b, __global int* c) { *c = a - b; }").getBinaries();
+        CLProgram ap2 = clcontext.createProgram(addBins, "__kernel void add(int a, int b, __global int* c) { *c = a + b; }");
+        ap2.createKernel("add");
+        CLProgram sp2 = clcontext.createProgram(subBins, "__kernel void sub(int a, int b, __global int* c) { *c = a - b; }");
+        sp2.setCached(true); // set to false and it works
+        sp2.createKernel("sub");
     }
 }

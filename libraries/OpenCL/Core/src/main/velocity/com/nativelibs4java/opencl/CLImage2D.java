@@ -1,9 +1,9 @@
 #parse("main/Header.vm")
 package com.nativelibs4java.opencl;
 import com.nativelibs4java.opencl.ImageIOUtils.ImageInfo;
-import static com.nativelibs4java.opencl.library.OpenCLLibrary.CL_IMAGE_HEIGHT;
-import static com.nativelibs4java.opencl.library.OpenCLLibrary.CL_IMAGE_ROW_PITCH;
-import static com.nativelibs4java.opencl.library.OpenCLLibrary.CL_IMAGE_WIDTH;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.CL_IMAGE_HEIGHT;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.CL_IMAGE_ROW_PITCH;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.CL_IMAGE_WIDTH;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -12,9 +12,10 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import org.bridj.Pointer;
+import org.bridj.SizeT;
 import static org.bridj.Pointer.*;
 
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_mem;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_mem;
 import com.nativelibs4java.util.Pair;
 
 /**
@@ -55,6 +56,23 @@ public class CLImage2D extends CLImage {
 	public long getHeight() {
 		return infos.getIntOrLong(getEntity(), CL_IMAGE_HEIGHT);
 	}
+
+	@Override
+	protected long[] getDimensions() {
+		return new long[] { getWidth(), getHeight() };
+	}
+
+    @Override
+    protected Pointer<SizeT> writeOrigin(long[] origin, ReusablePointer out) {
+        assert(origin.length == 2);
+        return out.pointerToSizeTs(origin[0], origin[1], 0);
+    }
+    
+    @Override
+    protected Pointer<SizeT> writeRegion(long[] region, ReusablePointer out) {
+        assert(region.length == 2);
+        return out.pointerToSizeTs(region[0], region[1], 1);
+    }
 
 	/**
 #documentEventsToWaitForAndReturn()

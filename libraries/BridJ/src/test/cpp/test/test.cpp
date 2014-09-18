@@ -1,3 +1,33 @@
+/*
+ * BridJ - Dynamic and blazing-fast native interop for Java.
+ * http://bridj.googlecode.com/
+ *
+ * Copyright (c) 2010-2013, Olivier Chafik (http://ochafik.com/)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Olivier Chafik nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY OLIVIER CHAFIK AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE REGENTS AND CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "stdafx.h"
 #include "test.h"
@@ -450,6 +480,16 @@ TEST_API int __cdecl MyEnumToInt(MyEnum value) {
 	return (int)value;
 }
 
+TEST_API int PMyEnumToInt(MyEnum *value) {
+  return value ? (int)*value : 0;
+}
+
+TEST_API MyEnum* intToPMyEnum(int value) {
+  static MyEnum e;
+  e = (MyEnum)value;
+  return &e;  
+}
+
 int Module::add(int a, int b) { 
     return a + b; 
 }
@@ -538,3 +578,42 @@ size_t Constructed::sizeOf() {
 	return sizeof(Constructed);
 }
 
+
+
+typedef void (*TwoPConstCharCallbackType)(const char*, const char*);
+TwoPConstCharCallbackType gCallback;
+TEST_API void defineCallback(TwoPConstCharCallbackType callback) {
+	gCallback = callback;
+}
+
+TEST_API void copyChar(char* dest, char* src) {
+	*dest = *src;
+}
+
+TEST_API char* incrPointer(char* ptr) {
+	return ptr + 1;
+}
+
+TEST_API void callCallback(long long times, const char* value) {
+	for (long long i = 0; i < times; i++) {
+		gCallback(value, "test");
+	}
+}
+
+struct MyUnknownStruct {
+	int a;
+};
+TEST_API MyUnknownStruct *newMyUnknownStruct(int a) {
+	MyUnknownStruct *ps = new MyUnknownStruct();
+	ps->a = a;
+	return ps;
+}
+TEST_API int deleteMyUnknownStruct(MyUnknownStruct *s) {
+	int a = s->a;
+	delete s;
+	return a;
+}
+
+TEST_API double callCallback(float (*cb)(int, long long), short a, char b) {
+    return cb(a, b);
+}

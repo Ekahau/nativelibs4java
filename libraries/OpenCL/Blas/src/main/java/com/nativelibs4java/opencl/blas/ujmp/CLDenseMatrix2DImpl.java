@@ -5,26 +5,24 @@
 
 package com.nativelibs4java.opencl.blas.ujmp;
 
-import com.nativelibs4java.opencl.blas.CLMatrix2D;
+import com.nativelibs4java.opencl.CLBuildException;
+import com.nativelibs4java.opencl.CLEvent;
+import com.nativelibs4java.opencl.CLQueue;
 import com.nativelibs4java.opencl.blas.CLEvents;
-import com.nativelibs4java.opencl.blas.CLMatrixUtils;
 import com.nativelibs4java.opencl.blas.CLKernels;
-import org.bridj.Pointer;
-import static org.bridj.Pointer.*;
-
-import org.ujmp.core.Matrix;
-
-import org.ujmp.core.calculation.Calculation.Ret;
-import org.ujmp.core.exceptions.MatrixException;
-import com.nativelibs4java.opencl.*;
+import com.nativelibs4java.opencl.blas.CLMatrix2D;
+import com.nativelibs4java.opencl.blas.CLMatrixUtils;
 import com.nativelibs4java.opencl.util.Fun1;
 import com.nativelibs4java.opencl.util.Fun2;
-import com.nativelibs4java.opencl.util.OpenCLType;
-import com.nativelibs4java.opencl.util.Primitive;
 import com.nativelibs4java.opencl.util.ReductionUtils;
 import com.nativelibs4java.opencl.util.ReductionUtils.Reductor;
-import org.ujmp.core.doublematrix.DoubleMatrix2D;
+
+import org.bridj.Pointer;
+import org.ujmp.core.calculation.Calculation.Ret;
+import org.ujmp.core.exceptions.MatrixException;
 import org.ujmp.core.matrix.Matrix2D;
+
+import static org.bridj.Pointer.allocate;
 
 /**
  *
@@ -32,15 +30,16 @@ import org.ujmp.core.matrix.Matrix2D;
  */
 public class CLDenseMatrix2DImpl<V> {
     protected final CLMatrix2D<V> _matrix;
-    protected final long rows, columns, size[];
+    protected final long rows, columns, stride, size[];
     protected Pointer<V> cache;
     protected int uncachedGetCount;
     protected static final int GET_COUNT_BEFORE_CACHING = 3;
-    
+
     public CLDenseMatrix2DImpl(CLMatrix2D<V> _matrix) {
         this._matrix = _matrix;
         this.rows = _matrix.getRowCount();
         this.columns = _matrix.getColumnCount();
+        this.stride = _matrix.getStride();
         this.size = new long[] { rows, columns };
         _matrix.getEvents().addListener(new CLEvents.Listener() {
             public void writing(CLEvents evts) {
@@ -57,15 +56,19 @@ public class CLDenseMatrix2DImpl<V> {
     protected CLMatrix2D<V> getMatrix() {
         return _matrix;
     }
+
+    public long getStride() {
+        return stride;
+    }
     
     protected long getStorageIndex(long row, long column) {
-        return row * columns + column;
+        return stride * row + column;
     }
 
     protected synchronized void cache() {
         if (cache != null)
             return;
-        
+
         cache = read();
         uncachedGetCount = 0;
     }
@@ -111,7 +114,7 @@ public class CLDenseMatrix2DImpl<V> {
             if (cache != null)
                 return cache.clone();
         }
-        Pointer<V> b = (Pointer)Pointer.allocateArray(getMatrix().getPrimitiveClass(), rows * columns);
+        Pointer<V> b = (Pointer)Pointer.allocateArray(getMatrix().getPrimitiveClass(), rows * stride);
         getMatrix().read(b);
         return b;
     }

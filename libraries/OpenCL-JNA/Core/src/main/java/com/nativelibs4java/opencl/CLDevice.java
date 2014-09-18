@@ -550,7 +550,7 @@ public class CLDevice extends CLAbstractEntity<cl_device_id> {
     public boolean hasErrorCorrectionSupport() {
         return infos.getBool(getEntity(), CL_DEVICE_ERROR_CORRECTION_SUPPORT);
     }
-    
+
     @InfoName("Out of order queues support")
     public boolean hasOutOfOrderQueueSupport() {
     		CLContext context = getPlatform().createContext(null, this);
@@ -601,6 +601,17 @@ public class CLDevice extends CLAbstractEntity<cl_device_id> {
     @InfoName("CL_DEVICE_COMPILER_AVAILABLE")
     public boolean isCompilerAvailable() {
         return infos.getBool(getEntity(), CL_DEVICE_COMPILER_AVAILABLE);
+    }
+
+    /**
+     * Is CL_FALSE if the implementation does not have a linker available.
+     * Is CL_TRUE if the linker is available.
+     * This can be CL_FALSE for the embedded platform profile only.
+     * This must be CL_TRUE if CL_DEVICE_COMPILER_AVAILABLE is CL_TRUE.
+     */
+    @InfoName("CL_DEVICE_LINKER_AVAILABLE")
+    public boolean isLinkerAvailable() {
+        return infos.getBool(getEntity(), CL_DEVICE_LINKER_AVAILABLE);
     }
 
     /**

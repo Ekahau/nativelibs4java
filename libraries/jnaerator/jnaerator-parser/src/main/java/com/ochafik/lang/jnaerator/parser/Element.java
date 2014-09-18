@@ -47,21 +47,38 @@ import java.util.Collections;
 public abstract class Element {
 	//List<Element> parentElements = new ArrayList<Element>(); 
 	Element parentElement;
-	protected List<String> nameSpace = new ArrayList<String>();
 	String elementFile;
 	int elementLine = -1;
 	String commentBefore, commentAfter;
 	static int nextId = 1;
 	private final int id = nextId++;
 	protected EnumSet<Language> possibleLanguages;
-    
+    protected Identifier resolvedJavaIdentifier;
+
     protected Map<Object, Object> attributes;
 
     public Element() {
         if (Thread.interrupted())
             throw new RuntimeException(new InterruptedException());
     }
+    
+    public void setResolvedJavaIdentifier(Identifier resolvedJavaIdentifier) {
+        this.resolvedJavaIdentifier = changeValue(this, this.resolvedJavaIdentifier, resolvedJavaIdentifier);
+    }
 
+    public Identifier getResolvedJavaIdentifier() {
+        return resolvedJavaIdentifier;
+    }
+
+    public static Identifier getName(Element element) {
+        if (element instanceof Function)
+            return ((Function) element).getName();
+        if (element instanceof TaggedTypeRefDeclaration)
+            return getName(((TaggedTypeRefDeclaration) element).getTaggedTypeRef());
+        if (element instanceof TypeRef.TaggedTypeRef)
+            return ((TypeRef.TaggedTypeRef) element).getTag();
+        return null;
+    }
     
     public Map<Object, Object> getAttributes() {
         return attributes == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(attributes);
@@ -105,21 +122,11 @@ public abstract class Element {
 		setElementFile(null);
 		setElementLine(-1);
 	}
-	public void addNameSpace(String nameSpace) {
-		this.nameSpace.add(0, nameSpace);
-	}
-	public List<String> getNameSpace() {
-		return unmodifiableList(nameSpace);
-	}
-	public void setNameSpace(List<String> nameSpace) {
-		this.nameSpace.clear();
-		this.nameSpace.addAll(nameSpace);
-	}
-	
     public Element importComments(Element e, String... extraComments) {
         if (e != null) {
             importDetails(e, false);
             moveAllCommentsBefore();
+            deDioxygenizeCommentBefore();
         }
         addToCommentBefore(extraComments);
         return this;
@@ -128,10 +135,7 @@ public abstract class Element {
 	public Element importDetails(Element from, boolean move) {
 		if (from == null)
 			return this;
-		
-		if (!from.getNameSpace().isEmpty())
-			setNameSpace(from.getNameSpace());
-		
+
 		if (from.getElementFile() != null)
 			setElementFile(from.getElementFile());
 		if (from.getElementLine() >= 0)
@@ -192,6 +196,13 @@ public abstract class Element {
 			addToCommentBefore(getCommentAfter());
 			setCommentAfter(null);
 		}
+	}
+	public void deDioxygenizeCommentBefore() {
+        String comment = getCommentBefore();
+        if (comment != null) {
+            comment = comment.replaceAll("\n\\s*\\* ", "\n");
+        }
+        setCommentBefore(comment);
 	}
 	public void addToCommentBefore(String... s) {
 		addToCommentBefore(Arrays.asList(s));
@@ -370,7 +381,14 @@ public abstract class Element {
 		parentElements.remove(e);
 	}*/
 	
-	public abstract boolean replaceChild(Element child, Element by);
+	public boolean replaceChild(Element child, Element by) {
+		if (getResolvedJavaIdentifier() == child) {
+            setResolvedJavaIdentifier((Identifier)by);
+            return true;
+        }
+			
+		return false;
+	}
 	public abstract Element getNextChild(Element child);
 	public abstract Element getPreviousChild(Element child);
 	

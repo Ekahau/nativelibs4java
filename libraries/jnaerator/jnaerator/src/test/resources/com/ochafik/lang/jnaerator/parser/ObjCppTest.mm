@@ -44,6 +44,8 @@ typedef const CHAR *LPCCH, *PCCH;
 long value = (int)(__u.__u >> 31);
 --
 long long l = 0x8000000000000000;
+long long ll = 10LL;
+unsigned long long ull = 10ULL;
 --
 void f(struct s i);
 --
@@ -65,6 +67,12 @@ register I i;
 char* initstate(unsigned, char*, size_t); /* no  __DARWIN_ALIAS needed */
 --
 register unsigned int g;
+--
+typedef struct myStruct
+{
+  char Struct[2];
+  char typeName[2];
+} Mine;
 --
 void srand(unsigned);
 --
@@ -180,7 +188,7 @@ template <typename _CharT, typename _Traits = char_traits<_CharT >, typename _Al
 class basic_string;
 template < > struct char_traits<char >;
 --
-/// Struct comment
+/** Struct comment */
 struct ParamBlockRec {
 	int ok; // comment after ok
 };
@@ -193,12 +201,12 @@ static inline int isascii(int _c) {
 	return (_c & ~0x7F) == 0;
 }
 --
-/// these are comments...
+/** these are comments... */
 void* CreateHandle(int size);
 --
 void** ResizeHandle(void** h, int size);
 --
-/// typedef bool BOOL;
+/** typedef bool BOOL; */
 class NSMapTable;
 BOOL (*isEqual)(NSMapTable* table, const void*, const void*);
 --
@@ -299,7 +307,7 @@ struct VolumeParam;
 struct CntrlParam;
 struct SlotDevParam;
 struct MultiDevParam;
-/// Test of comments before
+/** Test of comments before */
 union ParamBlockRec {
 	IOParam ioParam;
 	FileParam fileParam;
@@ -349,6 +357,15 @@ struct Test {__
 --
 libvlc_instance_t* libvlc_new(char *const *);
 --
+__extension__ typedef long long __time64_t;
+--
+void f(int __restrict__ a);
+--
+extern __inline__ __attribute__((__always_inline__,__gnu_inline__)) void __cdecl __debugbreak(void)
+{
+  __asm__ __volatile__("int $3");
+}
+--
 void f(struct x * const);
 --
 typedef __success(return >= 0) long HRESULT;
@@ -377,9 +394,11 @@ static __inline__  int __inline_isnormalf( float __x ) {
 }
 
 - (BOOL)tryLock;
+@optional
 - (BOOL)lockBeforeDate:(NSDate *)limit;
 
 //- (void)setName:(NSString *)n ;
+@required
 - (void)setName:(NSString in*)n;
 //- (NSString *)name ;
 - (NSString *)name;
@@ -440,7 +459,13 @@ typedef struct {
 
 @end
 --
-@interface NSObject (NSCoderMethods)
+@interface NSObject (NSCoderMethods) {
+}
+enum {
+    NSMachPortDeallocateNone = 0,
+    NSMachPortDeallocateSendRight = (1UL << 0),
+    NSMachPortDeallocateReceiveRight = (1UL << 1)
+};
 
 + (NSInteger)version;
 + (void)setVersion:(NSInteger)aVersion;
@@ -492,6 +517,14 @@ namespace std  {
   using ::mbstate_t;
 }
 --
+@interface Foo {
+  __strong __weak __autoreleasing __unsafe_unretained __block __bridge int _bar;
+}
+
+@property(readonly, readwrite, strong, retain, unsafe_unretained, copy, assign, nonatomic, atomic, getter=barre, weak) int bar;
+
+@end
+--
 extern TestMe();
 --
 #pragma fail
@@ -504,3 +537,5 @@ class fpos
 {
 	fpos() {}
 };
+--
+typedef enum : Foo { Quux } Baz;

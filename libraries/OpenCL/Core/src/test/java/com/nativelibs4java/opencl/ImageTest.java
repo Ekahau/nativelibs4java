@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.nativelibs4java.opencl;
 
 import org.bridj.Pointer;
@@ -11,16 +6,7 @@ import com.nativelibs4java.opencl.CLImageFormat.ChannelOrder;
 import static org.junit.Assert.*;
 
 import java.awt.image.BufferedImage;
-import java.nio.IntBuffer;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.nativelibs4java.test.MiscTestUtils;
-import com.nativelibs4java.util.ImageUtils;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.runners.Parameterized;
@@ -115,6 +101,23 @@ public class ImageTest extends AbstractCommon {
         clim.write(queue, im, false, true);
 
         assertSameImage(im, clim.read(queue));
+    }
+
+    @Test
+    public void testCopyTo() {
+        int width = 2, height = 2;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        int value = 0xaabbccdd;
+        image.setRGB(0, 0, value);
+        image.setRGB(1, 1, value);
+        CLImage2D src = context.createImage2D(CLMem.Usage.InputOutput, image, true);
+        CLImage2D dest = context.createImage2D(CLMem.Usage.InputOutput, src.getFormat(), width, height);
+        CLEvent e = src.copyTo(queue, dest);
+        BufferedImage res = dest.read(queue, e);
+        assertEquals(value, res.getRGB(0, 0));
+        assertEquals(0, res.getRGB(1, 0));
+        assertEquals(value, res.getRGB(1, 1));
+        assertEquals(0, res.getRGB(0, 1));
     }
 
 
@@ -300,7 +303,7 @@ public class ImageTest extends AbstractCommon {
 	public void testShortGrayImageSource() {
             if (!supportsImages())
                 return;
-            try {
+            // try {
 			CLContext context = JavaCL.createBestContext();
             CLQueue queue = context.createDefaultQueue();
 			String src = "\n" +
@@ -391,8 +394,28 @@ public class ImageTest extends AbstractCommon {
 			}
              *
              */
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        // } catch (Exception ex) {
+        //     ex.printStackTrace();
+        // }
 	}
+
+    @Test
+    public void testFillImage() {
+        if (!supportsImages())
+            return;
+        int width = 256, height = 256;
+        CLImage2D clim = context.createImage2D(CLMem.Usage.InputOutput, CLImageFormat.INT_ARGB_FORMAT, width, height);
+
+        int red = 100, green = 110, blue = 120, alpha = 127;
+        int argb = alpha << 24 | red << 16 | green << 8 | blue;
+        CLEvent e = clim.fillImage(queue, new int[] { red, green, blue, alpha });
+        BufferedImage im = clim.read(queue, e);
+        //int[] rgb = im.getRGB(0, 0, width, height, null, 0, width);
+        for (int x = 0; x < width; x++) {
+        	for (int y = 0; y < height; y++) {
+                int pix = im.getRGB(x, y);
+        		assertEquals("x = " + x + ", y = " + y, argb, pix);
+        	}
+        }
+    }
 }

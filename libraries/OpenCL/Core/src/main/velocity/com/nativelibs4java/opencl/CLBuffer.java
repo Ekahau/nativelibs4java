@@ -2,22 +2,24 @@
 package com.nativelibs4java.opencl;
 import com.nativelibs4java.util.Pair;
 import static com.nativelibs4java.opencl.CLException.error;
-import static com.nativelibs4java.opencl.JavaCL.CL;
+import static com.nativelibs4java.opencl.JavaCL.*;
 import static com.nativelibs4java.opencl.library.OpenCLLibrary.*;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.*;
 import static com.nativelibs4java.util.NIOUtils.directBytes;
 import static com.nativelibs4java.util.NIOUtils.directCopy;
 
 import java.nio.ByteBuffer;
 
 import com.nativelibs4java.opencl.library.cl_buffer_region;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_event;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_mem;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_event;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_mem;
 import org.bridj.*;
 import java.nio.ByteOrder;
 import java.nio.Buffer;
 import com.nativelibs4java.util.NIOUtils;
 import org.bridj.util.Utils;
 import static org.bridj.Pointer.*;
+import static com.nativelibs4java.opencl.proxy.PointerUtils.*;
 
 
 /**
@@ -71,7 +73,50 @@ public class CLBuffer<T> extends CLMem {
 	public Pair<Pointer<T>, CLEvent> mapLater(CLQueue queue, MapFlags flags, long offset, long length, CLEvent... eventsToWaitFor) throws CLException.MapFailure {
 		return map(queue, flags, offset, length, false, eventsToWaitFor);
     }
-    
+
+    /**
+#documentCallsFunction("clEnqueueFillBuffer")
+     * @param queue Queue on which to enqueue this fill buffer command.
+     * @param pattern Data pattern to fill the buffer with.
+#documentEventsToWaitForAndReturn()
+     */
+    public CLEvent fillBuffer(CLQueue queue, Pointer<T> pattern, CLEvent... eventsToWaitFor) {
+    	return fillBuffer(queue, pattern, pattern.getValidElements(), 0, getElementCount(), eventsToWaitFor);
+    }
+
+    /**
+#documentCallsFunction("clEnqueueFillBuffer")
+     * @param queue
+     * @param queue Queue on which to enqueue this fill buffer command.
+     * @param pattern Data pattern to fill the buffer with.
+     * @param patternLength Length in elements (not in bytes) of the pattern to use.
+     * @param offset Offset in elements where to start filling the pattern.
+     * @param length Length in elements of the fill (must be a multiple of patternLength).
+#documentEventsToWaitForAndReturn()
+     */
+    public CLEvent fillBuffer(CLQueue queue, Pointer<T> pattern, long patternLength, long offset, long length, CLEvent... eventsToWaitFor) {
+		context.getPlatform().requireMinVersionValue("clEnqueueFillBuffer", 1.2);
+		checkBounds(offset, length);
+		check(pattern != null, "Null pattern!");
+		long validPatternElements = pattern.getValidElements();
+		check(validPatternElements < 0 || patternLength <= validPatternElements,
+			"Pattern length exceeds the valid pattern elements count (%d > %d)",
+			patternLength, validPatternElements);
+		check(length % patternLength == 0, "Fill length must be a multiple of pattern length");
+
+		#declareReusablePtrsAndEventsInOut()
+		error(CL.clEnqueueFillBuffer(
+			queue.getEntity(),
+			getEntity(),
+			getPeer(pattern),
+			patternLength * getElementSize(),
+			offset * getElementSize(),
+			length * getElementSize(),
+			#eventsInOutArgsRaw()
+		));
+        #returnEventOut("queue")
+    }
+
     /**
      * Returns a pointer to native memory large enough for this buffer's data, and with a compatible byte ordering. 
      */
@@ -115,17 +160,13 @@ public class CLBuffer<T> extends CLMem {
 	 * @return sub-buffer that is a "window" of this buffer starting at the provided offset, with the provided length
 	 */
 	public CLBuffer<T> createSubBuffer(Usage usage, long offset, long length) {
-		try {
-			int s = getElementSize();
-			cl_buffer_region region = new cl_buffer_region().origin(s * offset).size(s * length);
-			#declareReusablePtrsAndPErr()
-		    long mem = CL.clCreateSubBuffer(getEntity(), usage.getIntFlags(), CL_BUFFER_CREATE_TYPE_REGION, getPeer(pointerTo(region)), getPeer(pErr));
-	        #checkPErr()
-	        return mem == 0 ? null : new CLBuffer<T>(context, length * s, mem, null, io);
-		} catch (Throwable th) {
-    		// TODO check if supposed to handle OpenCL 1.1
-    		throw new UnsupportedOperationException("Cannot create sub-buffer (OpenCL 1.1 feature).", th);
-    	}
+		context.getPlatform().requireMinVersionValue("clCreateSubBuffer", 1.1);
+		int s = getElementSize();
+		cl_buffer_region region = new cl_buffer_region().origin(s * offset).size(s * length);
+		#declareReusablePtrsAndPErr()
+	    long mem = CL.clCreateSubBuffer(getEntity(), usage.getIntFlags(), CL_BUFFER_CREATE_TYPE_REGION, getPeer(getPointer(region)), getPeer(pErr));
+        #checkPErr()
+        return mem == 0 ? null : new CLBuffer<T>(context, length * s, mem, null, io);
 	}
 	
 	/**
@@ -182,6 +223,9 @@ public class CLBuffer<T> extends CLMem {
 #documentCallsFunction("clEnqueueMapBuffer")
 	*/
 	protected Pair<Pointer<T>, CLEvent> map(CLQueue queue, MapFlags flags, long offset, long length, boolean blocking, CLEvent... eventsToWaitFor) {
+        if (flags == MapFlags.WriteInvalidateRegion) {
+            context.getPlatform().requireMinVersionValue("CL_MAP_WRITE_INVALIDATE_REGION", 1.2);
+        }
 		checkBounds(offset, length);
 		#declareReusablePtrsAndEventsInOutBlockable()
 		#declarePErr()
@@ -403,9 +447,50 @@ public class CLBuffer<T> extends CLMem {
 	
 	public <T> CLBuffer<T> as(Class<T> newTargetType) {
 		long mem = getEntity();
+		assert mem != 0;
 		error(CL.clRetainMemObject(mem));
         PointerIO<T> newIO = PointerIO.getInstance(newTargetType);
 		return copyGLMark(new CLBuffer<T>(context, getByteCount(), mem, owner, newIO));
 	}
+
+    /**
+#documentCallsFunction("clEnqueueCopyBuffer")
+     * @param queue
+#documentEventsToWaitForAndReturn()
+     */
+    public CLEvent copyTo(CLQueue queue, CLBuffer destination, CLEvent... eventsToWaitFor) {
+        return copyBytesTo(queue, destination, 0, 0, getByteCount(), eventsToWaitFor);
+    }
+
+    /**
+#documentCallsFunction("clEnqueueCopyBuffer")
+     * @param queue
+#documentEventsToWaitForAndReturn()
+     */
+    public CLEvent copyBytesTo(CLQueue queue, CLBuffer destination, long sourceByteOffset, long destinationByteOffset, long byteCount, CLEvent... eventsToWaitFor) {
+        #declareReusablePtrsAndEventsInOut()
+        error(CL.clEnqueueCopyBuffer(
+            queue.getEntity(),
+            getEntity(),
+            destination.getEntity(),
+            sourceByteOffset,
+            destinationByteOffset,
+            byteCount,
+            #eventsInOutArgsRaw()));
+		#returnEventOut("queue")
+    }
+
+    /**
+#documentCallsFunction("clEnqueueCopyBuffer")
+     * @param queue
+#documentEventsToWaitForAndReturn()
+     */
+    public CLEvent copyElementsTo(CLQueue queue, CLBuffer destination, long sourceElementOffset, long destinationElementOffset, long elementCount, CLEvent... eventsToWaitFor) {
+        return copyBytesTo(queue, destination,
+            sourceElementOffset * getElementSize(),
+            destinationElementOffset * getElementSize(),
+            elementCount * getElementSize(),
+            eventsToWaitFor);
+    }
 	
 }

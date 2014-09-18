@@ -3,16 +3,18 @@ package com.nativelibs4java.opencl;
 import static com.nativelibs4java.opencl.CLException.error;
 import static com.nativelibs4java.opencl.JavaCL.CL;
 import static com.nativelibs4java.opencl.library.OpenCLLibrary.*;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.*;
 
 import java.util.Arrays;
 
 import com.nativelibs4java.opencl.library.OpenCLLibrary;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_event;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_event;
 import com.nativelibs4java.util.EnumValue;
 import com.nativelibs4java.util.EnumValues;
 import org.bridj.*;
 import org.bridj.ann.Ptr;
 import static org.bridj.Pointer.*;
+import static com.nativelibs4java.opencl.proxy.PointerUtils.*;
 
 /**
  * OpenCL event object.<br/>
@@ -75,7 +77,7 @@ public class CLEvent extends CLAbstractEntity {
 			}
 		}
 	};
-	private static final long eventCallbackPeer = getPeer(pointerTo(eventCallback));
+	private static final long eventCallbackPeer = getPeer(getPointer(eventCallback));
 	
     /**
 #documentCallsFunction("clSetEventCallback")
@@ -87,11 +89,8 @@ public class CLEvent extends CLAbstractEntity {
      * @since OpenCL 1.1
      */
     public void setCallback(int commandExecStatus, final EventCallback callback) {
-    	try {
-	    	error(CL.clSetEventCallback(getEntity(), commandExecStatus, eventCallbackPeer, JNI.newGlobalRef(callback)));
-    	} catch (UnsatisfiedLinkError th) {
-    		throw new UnsupportedOperationException("Cannot set event callback (OpenCL 1.1 feature): " + th, th);
-    	}
+		queue.getContext().getPlatform().requireMinVersionValue("clSetEventCallback", 1.1);
+    	error(CL.clSetEventCallback(getEntity(), commandExecStatus, eventCallbackPeer, JNI.newGlobalRef(callback)));
     }
     
     static CLEvent createEvent(final CLQueue queue, long evt) {

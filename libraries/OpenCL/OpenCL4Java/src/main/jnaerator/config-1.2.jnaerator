@@ -5,8 +5,8 @@
 //-noJar -noComp
 -runtime BridJ
 
+-parseInOnePiece
 -gccLong
--genRawBindings
 -limitComments
 
 "-Dextern="
@@ -27,6 +27,11 @@
 -package com.nativelibs4java.opencl.library
 -libraryNamingPrefixes cl
 -library OpenCL
+
+-skipStructs "cl_u?(double|float|int|char|short|long)\d*"
+-optionalFunctions "cl.+(KHR|EXT|APPLE)|clSetPrintfCallback"
+-noStaticInit
+-extractDeclarations IOpenCLLibrary
 	"-I$(DIR)/../headers/1.2"
 	//"$(DIR)/../headers/1.2/CL/cl_platform.h"
 	"$(DIR)/../headers/1.2/CL/opencl.h"
@@ -40,3 +45,6 @@
 	
 
 -onlineDoc "Khronos Documentation for {0}" "http://www.khronos.org/registry/cl/sdk/1.2/docs/man/xhtml/{0}.html"
+
+-optionalFunctions
+	clCompileProgram|clCreateEventFromGLsyncKHR|clCreateFromGLTexture|clCreateImage|clCreateProgramWithBuiltInKernels|clCreateSubBuffer|clCreateSubDevices|clCreateSubDevicesEXT|clCreateUserEvent|clEnqueueBarrierWithWaitList|clEnqueueCopyBufferRect|clEnqueueFillBuffer|clEnqueueFillImage|clEnqueueMarkerWithWaitList|clEnqueueMigrateMemObjects|clEnqueueReadBufferRect|clEnqueueWriteBufferRect|clGetExtensionFunctionAddressForPlatform|clGetGLContextInfoAPPLE|clGetGLContextInfoAPPLE|clGetGLContextInfoKHR|clGetKernelArgInfo|clIcdGetPlatformIDsKHR|clLinkProgram|clLogMessagesToStderr|clLogMessagesToStderrAPPLE|clLogMessagesToStdout|clLogMessagesToStdoutAPPLE|clLogMessagesToSystemLog|clLogMessagesToSystemLogAPPLE|clReleaseDevice|clReleaseDeviceEXT|clRetainDevice|clRetainDeviceEXT|clSetEventCallback|clSetMemObjectCallbackFn|clSetMemObjectDestructorAPPLE|clSetMemObjectDestructorCallback|clSetPrintfCallback|clSetUserEventStatus|clUnloadPlatformCompiler

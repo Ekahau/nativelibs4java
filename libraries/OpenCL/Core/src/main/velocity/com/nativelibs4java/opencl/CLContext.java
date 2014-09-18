@@ -6,7 +6,8 @@ import static com.nativelibs4java.opencl.CLException.error;
 import static com.nativelibs4java.opencl.CLException.failedForLackOfMemory;
 import static com.nativelibs4java.opencl.JavaCL.CL;
 import static com.nativelibs4java.opencl.library.OpenCLLibrary.*;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_event;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.*;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_event;
 import static com.nativelibs4java.util.ImageUtils.getImageIntPixels;
 import static com.nativelibs4java.util.NIOUtils.getSizeInBytes;
 
@@ -33,15 +34,16 @@ import com.nativelibs4java.opencl.CLSampler.FilterMode;
 import com.nativelibs4java.opencl.ImageIOUtils.ImageInfo;
 import com.nativelibs4java.opencl.library.OpenGLContextUtils;
 import com.nativelibs4java.opencl.library.cl_image_format;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_context;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_device_id;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_mem;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_sampler;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_context;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_device_id;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_mem;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_sampler;
 import com.nativelibs4java.util.EnumValue;
 import com.nativelibs4java.util.EnumValues;
 import com.nativelibs4java.util.NIOUtils;
 import org.bridj.*;
 import static org.bridj.Pointer.*;
+import static com.nativelibs4java.opencl.proxy.PointerUtils.*;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Map;
@@ -166,15 +168,11 @@ public class CLContext extends CLAbstractEntity {
 	 * @since OpenCL 1.1
 	 */
 	public CLUserEvent createUserEvent() {
-		try {
-			#declareReusablePtrsAndPErr()
-			long evt = CL.clCreateUserEvent(getEntity(), getPeer(pErr));
-			#checkPErr()
-			return (CLUserEvent)CLEvent.createEvent(null, evt, true);
-		} catch (Throwable th) {
-			// TODO throw if supposed to handle OpenCL 1.1
-    		return null;
-		}
+		platform.requireMinVersionValue("clCreateUserEvent", 1.1);
+		#declareReusablePtrsAndPErr()
+		long evt = CL.clCreateUserEvent(getEntity(), getPeer(pErr));
+		#checkPErr()
+		return (CLUserEvent)CLEvent.createEvent(null, evt, true);
 	}
 
 	/**
@@ -432,6 +430,7 @@ public class CLContext extends CLAbstractEntity {
 	 */
 	@SuppressWarnings("deprecation")
 	public CLImage2D createImage2DFromGLTexture2D(CLMem.Usage usage, GLTextureTarget textureTarget, int texture, int mipLevel) {
+		platform.requireMinVersionValue("clCreateFromGLTexture2D", 1.1, 1.2);
 		#declareReusablePtrsAndPErr()
 		long mem;
 		int previousAttempts = 0;
@@ -497,6 +496,7 @@ public class CLContext extends CLAbstractEntity {
 	 */
 	@SuppressWarnings("deprecation")
 	public CLImage3D createImage3DFromGLTexture3D(CLMem.Usage usage, int texture, int mipLevel) {
+		platform.requireMinVersionValue("clCreateFromGLTexture3D", 1.1, 1.2);
 		#declareReusablePtrsAndPErr()
 		long mem;
 		int previousAttempts = 0;
@@ -534,13 +534,15 @@ public class CLContext extends CLAbstractEntity {
 	*/
 	@SuppressWarnings("deprecation")
 	public CLImage2D createImage2D(CLMem.Usage usage, CLImageFormat format, long width, long height, long rowPitch, Buffer buffer, boolean copy) {
+		platform.requireMinVersionValue("clCreateImage2D", 1.1, 1.2);
+		
 		long memFlags = usage.getIntFlags();
 		if (buffer != null) {
 			memFlags |= copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR;
 		}
 
 		#declareReusablePtrsAndPErr()
-		Pointer<cl_image_format> pImageFormat = pointerTo(format.to_cl_image_format());
+		Pointer<cl_image_format> pImageFormat = getPointer(format.to_cl_image_format());
 		Pointer<?> pBuffer = buffer == null ? null : pointerToBuffer(buffer);
 		long mem;
 		int previousAttempts = 0;
@@ -571,13 +573,14 @@ public class CLContext extends CLAbstractEntity {
 	*/
 	@SuppressWarnings("deprecation")
 	public CLImage3D createImage3D(CLMem.Usage usage, CLImageFormat format, long width, long height, long depth, long rowPitch, long slicePitch, Buffer buffer, boolean copy) {
+		platform.requireMinVersionValue("clCreateImage3D", 1.1, 1.2);
 		long memFlags = usage.getIntFlags();
 		if (buffer != null) {
 			memFlags |= copy ? CL_MEM_COPY_HOST_PTR : CL_MEM_USE_HOST_PTR;
 		}
 
 		#declareReusablePtrsAndPErr()
-		Pointer<cl_image_format> pImageFormat = pointerTo(format.to_cl_image_format());
+		Pointer<cl_image_format> pImageFormat = getPointer(format.to_cl_image_format());
 		Pointer<?> pBuffer = buffer == null ? null : pointerToBuffer(buffer);
 		long mem;
 		int previousAttempts = 0;
@@ -594,7 +597,6 @@ public class CLContext extends CLAbstractEntity {
 				getPeer(pBuffer),
 				getPeer(pErr));
 		} while (failedForLackOfMemory(pErr.getInt(), previousAttempts++));
-		
 		return new CLImage3D(this, mem, format);
 	}
 
@@ -698,7 +700,6 @@ public class CLContext extends CLAbstractEntity {
 				getPeer(data),
 				getPeer(pErr));
 		} while (failedForLackOfMemory(pErr.getInt(), previousAttempts++));
-
 		return new CLBuffer<T>(this, byteCount, mem, retainBufferReference ? data : null, io);
 	}
 

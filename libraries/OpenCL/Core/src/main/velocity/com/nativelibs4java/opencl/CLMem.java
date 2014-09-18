@@ -3,16 +3,18 @@ package com.nativelibs4java.opencl;
 import static com.nativelibs4java.opencl.CLException.error;
 import static com.nativelibs4java.opencl.JavaCL.CL;
 import static com.nativelibs4java.opencl.library.OpenCLLibrary.*;
+import static com.nativelibs4java.opencl.library.IOpenCLLibrary.*;
 
 import java.util.EnumSet;
 
 import com.nativelibs4java.opencl.library.OpenCLLibrary;
-import com.nativelibs4java.opencl.library.OpenCLLibrary.cl_mem;
+import com.nativelibs4java.opencl.library.IOpenCLLibrary.cl_mem;
 import com.nativelibs4java.util.EnumValue;
 import com.nativelibs4java.util.EnumValues;
+import org.bridj.ann.Ptr;
 import org.bridj.*;
 import static org.bridj.Pointer.*;
-
+import static com.nativelibs4java.opencl.proxy.PointerUtils.*;
 
 /**
  * OpenCL memory object.<br/>
@@ -62,14 +64,15 @@ public abstract class CLMem extends CLAbstractEntity {
      * @param callback
      */
     public void setDestructorCallback(final DestructorCallback callback) {
+		context.getPlatform().requireMinVersionValue("clSetMemObjectDestructorCallback", 1.1);
     	clSetMemObjectDestructorCallback_arg1_callback cb = new clSetMemObjectDestructorCallback_arg1_callback() {
-    		/// @param cl_mem1 user_data
-    		public void apply(OpenCLLibrary.cl_mem mem, Pointer userData) {
+    		@Override
+    		public void apply(@Ptr long mem, @Ptr long userData) {
     			callback.callback(CLMem.this);
     		}
     	};
     	BridJ.protectFromGC(cb);
-    	error(CL.clSetMemObjectDestructorCallback(getEntity(), getPeer(pointerTo(cb)), 0));
+    	error(CL.clSetMemObjectDestructorCallback(getEntity(), getPeer(getPointer(cb)), 0));
     }
     
     public CLEvent acquireGLObject(CLQueue queue, CLEvent... eventsToWaitFor) {
@@ -119,6 +122,35 @@ public abstract class CLMem extends CLAbstractEntity {
 			return flags;
 		}
 	}
+
+	/**
+	 * Memory object migration options (see {@link CLQueue#enqueueMigrateMemObjects(CLMem[], CLEvent[])}).
+	 */
+	public enum Migration implements com.nativelibs4java.util.ValuedEnum {
+		/**
+		 * This flag indicates that the specified set of memory objects are to be migrated 
+		 * to the host, regardless of the target command-queue.
+		 */
+		Host(CL_MIGRATE_MEM_OBJECT_HOST),
+		/**
+		 * This flag indicates that the contents of the set of memory objects are undefined after 
+		 * migration. The specified set of memory objects are migrated to the device associated with 
+		 * command_queue without incurring the overhead of migrating their contents.
+		 */
+		ContentUndefined(CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED);
+
+        Migration(long value) { this.value = value; }
+        long value;
+        @Override
+        public long value() { return value; }
+        public static long getValue(EnumSet<Migration> set) {
+            return EnumValues.getValue(set);
+        }
+
+        public static EnumSet<Migration> getEnumSet(long v) {
+            return EnumValues.getEnumSet(v, Migration.class);
+        }
+    }
 
 	public enum Flags implements com.nativelibs4java.util.ValuedEnum {
 		/**
@@ -211,7 +243,8 @@ public abstract class CLMem extends CLAbstractEntity {
 	public enum MapFlags implements com.nativelibs4java.util.ValuedEnum {
 		Read(CL_MAP_READ),
 		Write(CL_MAP_WRITE),
-		ReadWrite(CL_MAP_READ | CL_MAP_WRITE);
+		ReadWrite(CL_MAP_READ | CL_MAP_WRITE),
+        WriteInvalidateRegion(CL_MAP_WRITE_INVALIDATE_REGION);
 
 		MapFlags(long value) { this.value = value; }
 		long value;
