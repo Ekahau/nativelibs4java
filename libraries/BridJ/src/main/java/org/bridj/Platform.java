@@ -133,6 +133,15 @@ public class Platform {
                 return in;
             }
         }
+
+        // Fix for Java 9+ 
+        path = path.substring(1);
+        for (ClassLoader cl : cls) {
+            if (cl != null && (in = cl.getResource(path)) != null) {
+                return in;
+            }
+        }
+
         return null;
     }
     /*

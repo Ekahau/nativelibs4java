@@ -5,8 +5,8 @@
 	<artifactId>bridj</artifactId>
 	<name>BridJ (NativeLibs4Java C/C++ Interop Layer)</name>
 	<url>http://code.google.com/p/bridj/</url>
-	<description>This is the openimaj fork: https://github.com/jonhare/nativelibs4java, compiled 20140918. We've added back armel support. 20140918-2 fixes dyncall on osx.</description>
-	<version>0.7-20140918-2</version>
+	<description>This is the openimaj fork: https://github.com/jonhare/nativelibs4java, compiled 20140918. We've added back armel support. 20140918-2 fixes dyncall on osx. 20140918-3 updates dyncall on osx to 1.1 and fixes a Java 9+ compatiblity issue.</description>
+	<version>0.7-20140918-3</version>
 	<packaging>bundle</packaging>
 	
 	<properties>

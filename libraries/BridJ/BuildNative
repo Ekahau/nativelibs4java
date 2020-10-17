@@ -15,10 +15,10 @@ then
 	#Bridj was written before dyncall had stable releases; I do not know
 	#if the patches it originally applied to other plaforms are still needed, but
 	#on osx it seems perfectly happy using the plain stable versions
-	wget https://www.dyncall.org/r1.0/dyncall-1.0.tar.gz
-	tar xvf dyncall-1.0.tar.gz
-	rm dyncall-1.0.tar.gz
-	mv dyncall-1.0 dyncall
+	wget https://www.dyncall.org/r1.1/dyncall-1.1.tar.gz
+	tar xvf dyncall-1.1.tar.gz
+	rm dyncall-1.1.tar.gz
+	mv dyncall-1.1 dyncall
 fi
 
 MAKE_CMD=make
