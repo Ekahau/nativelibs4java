@@ -13,6 +13,8 @@
 		<versionSpecificSubPackage>v0_7_0</versionSpecificSubPackage>
 		<maven.compiler.optimize>true</maven.compiler.optimize>
 		<maven-velocity-plugin.version>0.10-SNAPSHOT</maven-velocity-plugin.version>
+		<shadedArtifactAttached>false</shadedArtifactAttached>
+		<shadedClassifierName></shadedClassifierName>
 	</properties>
 	
 	<parent>
