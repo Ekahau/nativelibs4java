@@ -30,18 +30,21 @@
  */
 package org.bridj;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
-import org.bridj.cpp.CPPRuntime.CPPTypeInfo;
-import org.junit.Test;
-import static org.junit.Assert.*;
-
-import org.bridj.cpp.*;
-import org.bridj.cpp.std.*;
-import static org.bridj.Pointer.*;
-
 import java.lang.reflect.Type;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.bridj.cpp.CPPRuntime;
+import org.bridj.cpp.CPPRuntime.CPPTypeInfo;
+import org.bridj.cpp.CPPType;
+import org.bridj.cpp.std.list;
+import org.bridj.cpp.std.vector;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class STLTest {
     <T> DynamicFunction<T> getTestFunction(String name, Type ret, Type... args) {
@@ -57,6 +60,7 @@ public class STLTest {
             throw new RuntimeException("Failed to get test function " + name + ": " + ex, ex);
         }
     }
+    @SuppressWarnings("rawtypes")
     DynamicFunction<Pointer<?>> new_int_vector = getTestFunction("new_int_vector", Pointer.class, int.class);
     DynamicFunction<Integer> int_vector_get = getTestFunction("int_vector_get", int.class, Pointer.class, int.class);
     DynamicFunction<Void> int_vector_push_back = getTestFunction("int_vector_push_back", void.class, Pointer.class, int.class);
@@ -64,15 +68,16 @@ public class STLTest {
     DynamicFunction<Void> int_vector_resize = getTestFunction("int_vector_get", void.class, Pointer.class, int.class);
     DynamicFunction<SizeT> sizeof_int_vector = getTestFunction("sizeof_int_vector", SizeT.class);
 
+    @SuppressWarnings("rawtypes")
     DynamicFunction<Pointer<?>> new_int_list = getTestFunction("new_int_list", Pointer.class);
     DynamicFunction<Void> int_list_push_back = getTestFunction("int_list_push_back", void.class, Pointer.class, int.class);
 
-	@Test
-	public void testVector() throws Exception {
-		Type intVectorType = CPPType.getCPPType(vector.class, int.class);
-		assertEquals("bad vector<int> size !",
-					 sizeof_int_vector.apply().longValue(), 
-					 BridJ.sizeOf(intVectorType));
+    @Test
+    public void testVector() throws Exception {
+        Type intVectorType = CPPType.getCPPType(vector.class, int.class);
+        assertEquals("bad vector<int> size !",
+                     sizeof_int_vector.apply().longValue(), 
+                     BridJ.sizeOf(intVectorType));
         CPPTypeInfo<vector<Integer>> typeInfo = (CPPTypeInfo)CPPRuntime.getInstance().getCPPTypeInfo(intVectorType);
         System.out.println("Type info for " + intVectorType + ": " + typeInfo);
         
@@ -88,27 +93,31 @@ public class STLTest {
         int_vector_push_back.apply(nativeVector, -1);
         assertEquals("bad size after push_back", n + 1, bridjVector.size());
         assertEquals("bad back", -1, (int)bridjVector.back());
+        int_vector_push_back.apply(nativeVector, -2);
+        assertEquals("bad size after push_back", n + 2, bridjVector.size());
+        assertEquals("bad back", -2, (int)bridjVector.back());
     }
     
+    @Ignore
     @Test
-	public void testList() throws Exception {
-        try {
-            int n = 10;
-            Pointer<?> nativeList = new_int_list.apply();
-            list<Integer> bridjList = new list<Integer>((Pointer)nativeList, Integer.class);
-            assertTrue("bad empty()", bridjList.empty());
-            int_list_push_back.apply(nativeList, 66);
-                
-            int[] values = nativeList.getInts(20);
-            long[] ptrs = nativeList.getSizeTs(10);
-            long peer = nativeList.getPeer();
-            for (int i = n; --i != 0;) {
-                int_list_push_back.apply(nativeList, i);
-                assertEquals("bad back() at index " + i, i, (int)bridjList.back());
-            }
-        } catch (Throwable th) {
-            th.printStackTrace();
-            assertNull(th);
+    public void testList() throws Exception {
+        int n = 10;
+        Pointer<?> nativeList = new_int_list.apply();
+        list<Integer> bridjList = new list<Integer>((Pointer)nativeList, Integer.class);
+        assertTrue("bad empty()", bridjList.empty());
+//            assertEquals("bad size()", 0, bridjList.size());
+        int_list_push_back.apply(nativeList, 66);
+        assertFalse("bad empty()", bridjList.empty());
+        assertEquals("first front()", 66, (int)bridjList.front());
+        assertEquals("first back()", 66, (int)bridjList.back());
+        
+        int_list_push_back.apply(nativeList, 65);
+        assertEquals("second front()", 66, (int)bridjList.front());
+        assertEquals("second back()", 65, (int)bridjList.back());
+
+        for (int i = n; --i != 0;) {
+            int_list_push_back.apply(nativeList, i);
+            assertEquals("bad back() at index " + i, i, (int)bridjList.back());
         }
     }
 }

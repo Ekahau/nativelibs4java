@@ -34,6 +34,7 @@ import org.junit.*;
 import static org.junit.Assert.*;
 
 public class VersionTest {
+	@Ignore
 	@Test
 	public void testVersion() {
 		assertTrue(Version.MAVEN_VERSION, 

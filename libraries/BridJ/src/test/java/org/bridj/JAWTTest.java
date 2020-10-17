@@ -32,16 +32,27 @@ package org.bridj;
 
 
 
-import org.junit.Test;
-import java.awt.*;
-import org.bridj.jawt.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import static org.junit.Assert.*;
+import java.awt.Frame;
+
+import org.bridj.jawt.JAWTUtils;
+import org.bridj.jawt.JAWT_DrawingSurface;
+import org.bridj.jawt.JAWT_Rectangle;
+import org.junit.Test;
 
 public class JAWTTest {
 	
 	@Test
 	public void testWindowPeer() throws Exception {
+    if (Platform.isMacOSX() ||
+        System.getProperty("java.version").matches("1\\.6\\..*")) {
+      // Oracle Java and jawt: it's complicated.
+      // See http://forum.lwjgl.org/index.php?topic=4326.0
+      // OpenJDK 6 + Linux seem problematic too.
+      return;
+    }
 		assertEquals(6 * Pointer.SIZE, BridJ.sizeOf(JAWT_DrawingSurface.class));
 		assertEquals(4 * 4, BridJ.sizeOf(JAWT_Rectangle.class));
 		//assertEquals(4 + 5 * Pointer.SIZE, BridJ.sizeOf(JAWT.class));
@@ -52,6 +63,7 @@ public class JAWTTest {
 		f.pack();
 		
 		f.setVisible(true);
+    Thread.sleep(500);
 		long p = JAWTUtils.getNativePeerHandle(f);
 		assertTrue(p != 0);
 		f.setVisible(false);
