@@ -11,7 +11,14 @@ export DYNCALL_HOME=$BASE_DIR/dyncall
 
 if [[ ! -d "$DYNCALL_HOME" ]]
 then
-	$BASE_DIR/admin/checkout_and_patch_dyncall.sh src/main/cpp/bridj/dyncall.diff || failed "Failed to checkout and patch dyncall"
+	# $BASE_DIR/admin/checkout_and_patch_dyncall.sh src/main/cpp/bridj/dyncall.diff || failed "Failed to checkout and patch dyncall"
+	#Bridj was written before dyncall had stable releases; I do not know
+	#if the patches it originally applied to other plaforms are still needed, but
+	#on osx it seems perfectly happy using the plain stable versions
+	wget https://www.dyncall.org/r1.0/dyncall-1.0.tar.gz
+	tar xvf dyncall-1.0.tar.gz
+	rm dyncall-1.0.tar.gz
+	mv dyncall-1.0 dyncall
 fi
 
 MAKE_CMD=make
@@ -119,7 +126,7 @@ function build_libraries() {
     for BRIDJ_TARGET in $BRIDJ_TARGETS ; do
 	    case $BRIDJ_TARGET in
 	    default)
-		    cd $DYNCALL_HOME/dyncall
+		    cd $DYNCALL_HOME
 		    local DYNCALL_CONFIGURE_ARGS=""
 		    if [[ "$ARCH" != "$NATIVE_ARCH" ]]; then
 		        DYNCALL_CONFIGURE_ARGS="--target-$ARCH"
@@ -165,5 +172,9 @@ if [[ $OS =~ sunos ]]; then
     ARCH=x86 build_libraries $@
     ARCH=x64 build_libraries $@
 else
+	if [[ $OS =~ darwin ]]; then
+      export AS=llvm-as
+      export CC="llvm-gcc -stdlib=libc++"
+    fi
     build_libraries $@
 fi

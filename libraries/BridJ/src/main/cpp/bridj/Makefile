@@ -22,21 +22,21 @@ UNITS += RawNativeForwardCallback_arch
 UNITS += ThreadLocal
 UNITS += Utils
 
+CPPFLAGS  += -I$(DYNCALL_HOME)
 CPPFLAGS  += -I$(DYNCALL_HOME)/dyncall
-CPPFLAGS  += -I$(DYNCALL_HOME)/dyncall/dyncall
-CPPFLAGS  += -I$(DYNCALL_HOME)/dyncall/dyncallback
-CPPFLAGS  += -I$(DYNCALL_HOME)/dyncall/dynload
+CPPFLAGS  += -I$(DYNCALL_HOME)/dyncallback
+CPPFLAGS  += -I$(DYNCALL_HOME)/dynload
 
 ifneq ($(ARCH), armhf)
 CPPFLAGS  += -mtune=generic
 endif
 
 ifeq ($(OS), darwin)
-CPPFLAGS  += -no-integrated-as
+# CPPFLAGS  += -no-integrated-as
 CPPFLAGS  += -D_DARWIN_C_SOURCE
 CPPFLAGS  += -I/System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers/
-CPPFLAGS  += -mmacosx-version-min=10.4
-LDFLAGS   += -mmacosx-version-min=10.4
+CPPFLAGS  += -mmacosx-version-min=10.7
+LDFLAGS   += -mmacosx-version-min=10.7
 LDFLAGS	  += -ldl -framework Foundation -all_load
 else
 ifneq ($(OS), sunos)
@@ -84,12 +84,12 @@ CPPFLAGS  +=  -I$(JAVA_HOME)/include/solaris
 CPPFLAGS  +=  -I$(JAVA_HOME)/include/windows
 CPPFLAGS  +=  -I$(JAVA_HOME)/include/darwin
 
-LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/dyncall/$(DYNCALL_BUILD_DIR)
-LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/dynload/$(DYNCALL_BUILD_DIR)
-LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/dyncallback/$(DYNCALL_BUILD_DIR)
-LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/dyncall
-LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/dynload
-LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/dyncallback
+LDFLAGS   += -L$(DYNCALL_HOME)/dyncall/$(DYNCALL_BUILD_DIR)
+LDFLAGS   += -L$(DYNCALL_HOME)/dynload/$(DYNCALL_BUILD_DIR)
+LDFLAGS   += -L$(DYNCALL_HOME)/dyncallback/$(DYNCALL_BUILD_DIR)
+LDFLAGS   += -L$(DYNCALL_HOME)/dyncall
+LDFLAGS   += -L$(DYNCALL_HOME)/dynload
+LDFLAGS   += -L$(DYNCALL_HOME)/dyncallback
 LDFLAGS   += -l dyncall_s -l dynload_s -l dyncallback_s
 
 include epilog.make

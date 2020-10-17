@@ -6,11 +6,11 @@ SHARED_LIB	 = dependsOnTest
 UNITS += dependsOnTest
 
 CPPFLAGS	+=	-I../test
-CPPFLAGS	+= -fPIC
+CPPFLAGS	+= -fPIC -stdlib=libc++
 
 ifeq ($(OS), darwin)
-CPPFLAGS  += -mmacosx-version-min=10.5
-LDFLAGS   += -mmacosx-version-min=10.5
+CPPFLAGS  += -mmacosx-version-min=10.7
+LDFLAGS   += -mmacosx-version-min=10.7
 # LDFLAGS		+= -rpath
 else
 ifeq ($(OS), sunos)
