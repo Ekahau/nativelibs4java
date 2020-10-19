@@ -11,6 +11,6 @@ jobs:
           java-version: 1.8
       - name: Publish package
         working-directory: libraries/BridJ
-        run: mvn -B -Dtest=!org.bridj.JAWTTest clean deploy
+        run: mvn -B -Dtest=!org.bridj.ComparisonTest clean deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
