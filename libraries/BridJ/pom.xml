@@ -23,6 +23,14 @@
 		<version>1.8</version>
 		<relativePath>..</relativePath>
 	</parent>
+
+    <distributionManagement>
+      <repository>
+        <id>github</id>
+        <name>GitHub Packages</name>
+        <url>https://maven.pkg.github.com/Ekahau/nativelibs4java</url>
+      </repository>
+    </distributionManagement>
 	
 	<dependencies>
 		<dependency>
