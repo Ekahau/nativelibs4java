@@ -40,7 +40,6 @@ import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.Ignore;
 import org.junit.Test;
 /**
  * mvn -o compile test-compile && MAVEN_OPTS="-Xmx2g -Xrunhprof:cpu=samples,doe=y,depth=15" mvn -o -DforkMode=never surefire:test -DenableAssertions=false -Dtest=ComparisonTest && jProfBeautifier
@@ -452,7 +451,6 @@ public class ComparisonTest {
 		return b.slice();
 	}
 	
-	@Ignore
 	@Test
 	public void compareStructArrayCasts() throws InterruptedException {
 		//if (true) return;
