@@ -1,3 +1,5 @@
+Forked from https://github.com/jonhare/nativelibs4java which fixes an issue tp BridJ with loading libraries on OSX Catalina. 
+
 This repository hosts source code for the following (related) projects :
 
 *   [JNAerator](http://code.google.com/p/jnaerator/) parses C, C++ and Objective-C headers and generates Java bindings for use with BridJ, JNA or Rococoa
